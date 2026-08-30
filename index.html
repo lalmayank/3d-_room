@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Interactive 3D Room - Spacious Layout</title>
+  <style>
+    body { 
+      margin: 0; 
+      overflow: hidden; 
+      background-color: #87CEEB; 
+    }
+    canvas { 
+      display: block; 
+    }
+    #loading {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-family: monospace;
+      font-size: 24px;
+      pointer-events: none;
+      z-index: 10;
+      font-weight: bold;
+    }
+    #instructions {
+      position: absolute;
+      bottom: 20px; left: 20px;
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: bold;
+      font-family: sans-serif;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .cutscene-screen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background-color: rgba(0, 0, 0, 0.9);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.8s ease-in-out;
+      z-index: 100;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    .cutscene-screen.active {
+      opacity: 1;
+      pointer-events: auto; 
+      cursor: pointer; 
+    }
+
+    #cutscene-table {
+      background-image: url('image.png');
+      background-size: 100% 100%; 
+      overflow: hidden; 
+    }
+    
+    #newspaper-overlay {
+      position: absolute;
+      top: -50%;
+      left: 150%; 
+      transform: translate(-50%, -50%) scale(0.1) rotate(1080deg);
+      width: 80vw; 
+      max-width: 900px;
+      opacity: 0;
+      transition: all 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+      z-index: 105;
+      pointer-events: none; 
+    }
+
+    #newspaper-overlay.thrown {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(1) rotate(-8deg); 
+      opacity: 1;
+    }
+
+    #cutscene-board {
+      background-image: url('board_evidence.jpg'); 
+      background-size: contain; 
+    }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+
+<div id="loading">Loading 3D Models...</div>
+<div id="instructions">W/A/S/D to Walk | Walk to the Table or Boards to investigate</div>
+
+<div id="cutscene-table" class="cutscene-screen" title="Click to close table blueprint">
+    <img id="newspaper-overlay" src="image_90cdb7.png" alt="News Article">
+</div>
+<div id="cutscene-board" class="cutscene-screen" title="Click to close board evidence"></div>
+
+<script type="module">
+  import * as THREE from 'three';
+  import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+  import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87ceeb); // Morning Sky Blue
+
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.set(45, 0, 40); // Spawns at the Entry Point of the wider passage
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  document.body.appendChild(renderer.domElement);
+
+  const ambientLight = new THREE.AmbientLight(0xaad3ff, 1.0); // Morning bluish ambient
+  scene.add(ambientLight);
+
+  const roomFillLight = new THREE.PointLight(0xfff0dd, 250, 200);
+  roomFillLight.position.set(-15, 12, 0); 
+  roomFillLight.castShadow = true;
+  roomFillLight.shadow.mapSize.width = 2048;
+  roomFillLight.shadow.mapSize.height = 2048;
+  roomFillLight.shadow.bias = -0.001;
+  scene.add(roomFillLight);
+
+  // --- EXPANDED WALL ARCHITECTURE ---
+  const northWall = new THREE.Group(); 
+  northWall.position.set(0, 0, -45); // Pushed back 15 units
+  scene.add(northWall);
+
+  const southWall = new THREE.Group(); 
+  southWall.position.set(0, 0, 45); // Pushed forward 15 units
+  scene.add(southWall);
+
+  const westWall = new THREE.Group();  
+  westWall.position.set(-60, 0, 0); // Pushed left 20 units
+  scene.add(westWall);
+
+  const eastWall = new THREE.Group();  
+  eastWall.position.set(60, 0, 0); // Pushed right 20 units
+  scene.add(eastWall);
+
+  const innerWall = new THREE.Group(); 
+  innerWall.position.set(30, 0, -15);  
+  scene.add(innerWall);
+
+  // Morning Sunlight: Placed outside the windows shining IN
+  const sun1 = new THREE.DirectionalLight(0xffcba3, 5.0);
+  sun1.position.set(45, 10, -60); // Outside North wall
+  sun1.target.position.set(45, -5, 20); // Pointing deep into the room
+  sun1.castShadow = true;
+  sun1.shadow.mapSize.width = 2048;
+  sun1.shadow.mapSize.height = 2048;
+  sun1.shadow.camera.near = 0.5;
+  sun1.shadow.camera.far = 150;
+  sun1.shadow.camera.left = -50;
+  sun1.shadow.camera.right = 50;
+  sun1.shadow.camera.top = 50;
+  sun1.shadow.camera.bottom = -50;
+  sun1.shadow.bias = -0.0005;
+  scene.add(sun1);
+  scene.add(sun1.target);
+
+  const sun2 = new THREE.DirectionalLight(0xffcba3, 6.0);
+  sun2.position.set(-15, 10, -60); // Outside North wall
+  sun2.target.position.set(-15, -5, 20);
+  sun2.castShadow = true;
+  sun2.shadow.mapSize.width = 2048;
+  sun2.shadow.mapSize.height = 2048;
+  sun2.shadow.camera.near = 0.5;
+  sun2.shadow.camera.far = 150;
+  sun2.shadow.camera.left = -50;
+  sun2.shadow.camera.right = 50;
+  sun2.shadow.camera.top = 50;
+  sun2.shadow.camera.bottom = -50;
+  sun2.shadow.bias = -0.0005;
+  scene.add(sun2);
+  scene.add(sun2.target);
+
+  const loader = new GLTFLoader();
+  
+  let modelsLoaded = 0;
+  // Failsafe: if a model errors out, this still fires so you don't get a blank screen
+  function checkLoad() {
+    modelsLoaded++;
+    if (modelsLoaded >= 6) { 
+      document.getElementById('loading').style.display = 'none';
+    }
+  }
+  function handleLoadError(error) {
+    console.warn("A model failed to load. Check your file names!", error);
+    checkLoad(); 
+  }
+  
+  // A. Load Bricks & Construct Expanded Walls
+  loader.load('damaged_concrete_tiles__tile_texture.glb', function (gltf) {
+      let brickMaterial = null;
+
+      gltf.scene.traverse((child) => {
+        if (child.isMesh && child.material) brickMaterial = child.material;
+      });
+
+      if (brickMaterial) {
+        brickMaterial.side = THREE.DoubleSide; 
+        const maps = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap'];
+        maps.forEach(mapName => {
+          if (brickMaterial[mapName]) {
+            brickMaterial[mapName].wrapS = THREE.RepeatWrapping;
+            brickMaterial[mapName].wrapT = THREE.RepeatWrapping;
+            brickMaterial[mapName].repeat.set(15, 10); // More repeats for bigger walls
+          }
+        });
+
+        // North Wall (120 width)
+        const northGeo = new THREE.BoxGeometry(120, 30, 4);
+        const northMesh = new THREE.Mesh(northGeo, brickMaterial);
+        northWall.add(northMesh);
+
+        // West/East Walls (90 depth)
+        const sideGeo = new THREE.BoxGeometry(90, 30, 4);
+        const westMesh = new THREE.Mesh(sideGeo, brickMaterial);
+        westMesh.rotation.y = Math.PI / 2;
+        westWall.add(westMesh);
+
+        const eastMesh = new THREE.Mesh(sideGeo, brickMaterial);
+        eastMesh.rotation.y = -Math.PI / 2;
+        eastWall.add(eastMesh);
+
+        // South Wall (90 width, leaves 30 units open on the right for passage)
+        const southGeo = new THREE.BoxGeometry(90, 30, 4);
+        const southMesh = new THREE.Mesh(southGeo, brickMaterial);
+        southMesh.rotation.y = Math.PI;
+        southMesh.position.set(-15, 0, 0); 
+        southWall.add(southMesh);
+
+        // Inner Passage Wall (60 depth, leaves 30 units gap at the front)
+        const innerGeo = new THREE.BoxGeometry(60, 30, 4);
+        const innerMesh = new THREE.Mesh(innerGeo, brickMaterial);
+        innerMesh.rotation.y = Math.PI / 2;
+        innerWall.add(innerMesh);
+
+        // Ceiling & Floor (120 x 90, thickness 4)
+        const ceilingGeo = new THREE.BoxGeometry(120, 4, 90);
+        const ceilingMesh = new THREE.Mesh(ceilingGeo, brickMaterial);
+        
+        // Push ceiling up so its bottom face rests exactly at y=15
+        ceilingMesh.position.set(0, 17, 0);
+        scene.add(ceilingMesh);
+
+        const floorMesh = new THREE.Mesh(ceilingGeo, brickMaterial);
+        
+        // Push floor down so its top face rests exactly at y=-15
+        floorMesh.position.set(0, -17, 0);
+        scene.add(floorMesh);
+
+        // Solid wall behind spawn
+        const spawnGeo = new THREE.BoxGeometry(30, 30, 4);
+        const spawnMesh = new THREE.Mesh(spawnGeo, brickMaterial);
+        spawnMesh.rotation.y = Math.PI;
+        spawnMesh.position.set(45, 0, 45);
+        scene.add(spawnMesh);
+
+        // Enable Shadows on all Room Parts
+        [northMesh, westMesh, eastMesh, southMesh, innerMesh, ceilingMesh, floorMesh, spawnMesh].forEach(m => {
+          m.receiveShadow = true;
+          m.castShadow = true;
+        });
+      }
+      checkLoad();
+  }, undefined, handleLoadError);
+
+  // B. Load Table
+  loader.load('table.glb', function (gltf) {
+      const table = gltf.scene;
+      table.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+      table.position.set(-15, -15.2, 0); 
+      table.scale.set(4, 4, 4); 
+      scene.add(table);
+      checkLoad();
+  }, undefined, handleLoadError);
+
+  const textureLoader = new THREE.TextureLoader();
+  textureLoader.load('image.png', function(texture) {
+      const blueprintGeo = new THREE.PlaneGeometry(20, 12); // Slightly smaller to fit nicely
+      const blueprintMat = new THREE.MeshStandardMaterial({ 
+        map: texture, 
+        roughness: 0.9, 
+        metalness: 0.0,
+        transparent: true 
+      });
+      const blueprint = new THREE.Mesh(blueprintGeo, blueprintMat);
+      blueprint.receiveShadow = true;
+      blueprint.castShadow = true;
+      blueprint.rotation.x = -Math.PI / 2;
+      blueprint.position.set(-15, -4.75, 0); // Adjusted height to rest perfectly on the table
+      scene.add(blueprint);
+  });
+
+  // C. Load Evidence Boards
+  const boardTextureLoader = new THREE.TextureLoader();
+  boardTextureLoader.load('board_evidence.jpg', function(texture) { 
+      const boardImgGeo = new THREE.PlaneGeometry(32, 21); 
+      const boardImgMat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+      const boardImg = new THREE.Mesh(boardImgGeo, boardImgMat);
+      boardImg.receiveShadow = true;
+      boardImg.castShadow = true;
+      boardImg.rotation.y = Math.PI / 2; 
+      // Moved out of West wall
+      boardImg.position.set(-57.9, 5.5, 0); 
+      scene.add(boardImg); 
+  });
+
+  loader.load('psx_-_corkevidence_board_2.glb', function (gltf) {
+      const board1 = gltf.scene;
+      board1.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+      const box = new THREE.Box3().setFromObject(board1);
+      const center = box.getCenter(new THREE.Vector3());
+      board1.position.set(-center.x, -center.y, -center.z);
+      
+      const board1Wrapper = new THREE.Group();
+      board1Wrapper.add(board1);
+      board1Wrapper.scale.set(400, 400, 400); 
+      // Placed on South wall globally, away from thick wall
+      board1Wrapper.position.set(-15, 5, 42.5); 
+      board1Wrapper.rotation.y = Math.PI; // FIXED: Flipped 180 to face room
+      scene.add(board1Wrapper); 
+
+      const board2 = board1.clone();
+      const board2Wrapper = new THREE.Group();
+      board2Wrapper.add(board2);
+      board2Wrapper.scale.set(400, 400, 400); 
+      // Placed on West wall globally, away from thick wall
+      board2Wrapper.position.set(-57.5, 5, 0); 
+      board2Wrapper.rotation.y = Math.PI / 2; 
+      scene.add(board2Wrapper); 
+      checkLoad();
+  }, undefined, handleLoadError);
+
+  // D. Load Chair
+  loader.load('wooden_chair.glb', function (gltf) {
+      const chair = gltf.scene;
+      chair.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+      chair.position.set(-15, -15, 15); 
+      chair.scale.set(12, 12, 12); 
+      chair.rotation.y = Math.PI / 8;
+      scene.add(chair);
+      checkLoad();
+  }, undefined, handleLoadError);
+
+  // E. Load Bucket Bench
+  loader.load('bucket_bench_19th_century.glb', function (gltf) {
+      const bench = gltf.scene;
+      bench.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+      bench.position.set(-45, -15, -35); 
+      bench.scale.set(15, 15, 15); 
+      scene.add(bench);
+      checkLoad();
+  }, undefined, handleLoadError);
+
+  // F. Load File Cabinet (If missing, it skips gracefully)
+  loader.load('file_cabinet.glb', function (gltf) {
+      const cabinet = gltf.scene;
+      cabinet.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+      cabinet.position.set(-45, -15, 35); 
+      cabinet.rotation.y = Math.PI; 
+      cabinet.scale.set(10, 10, 10); 
+      scene.add(cabinet);
+      checkLoad();
+  }, undefined, handleLoadError);
+
+  // G. Fake Sky Backdrops (Windows Removed)
+  // These glowing blue planes simulate a bright morning sky outside!
+  const skyGeo = new THREE.PlaneGeometry(16, 18);
+  const skyMat = new THREE.MeshBasicMaterial({ color: 0x87ceeb }); // Bright sky blue, unaffected by shadows!
+  
+  const sky1 = new THREE.Mesh(skyGeo, skyMat);
+  sky1.position.set(45, 5, -42.5); // Placed on the wall
+  scene.add(sky1);
+
+  const sky2 = new THREE.Mesh(skyGeo, skyMat);
+  sky2.position.set(-15, 5, -42.5);
+  scene.add(sky2);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableZoom = false; 
+  controls.enablePan = false;
+  controls.minDistance = 0.1;
+  controls.maxDistance = 0.1; 
+  controls.minPolarAngle = Math.PI / 3;   
+  controls.maxPolarAngle = Math.PI / 1.7; 
+
+  const lookDir = new THREE.Vector3(0, 0, -1).normalize(); 
+  controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+  controls.update();
+
+  const keys = { w: false, a: false, s: false, d: false };
+  document.addEventListener('keydown', (e) => {
+    const key = e.key.toLowerCase();
+    if (key in keys) keys[key] = true;
+  });
+  document.addEventListener('keyup', (e) => {
+    const key = e.key.toLowerCase();
+    if (key in keys) keys[key] = false;
+  });
+
+  let cutsceneTableTriggered = false;
+  let cutsceneBoardTriggered = false;
+
+  document.getElementById('cutscene-table').addEventListener('click', function() {
+    this.classList.remove('active');
+    document.getElementById('newspaper-overlay').classList.remove('thrown');
+    camera.position.set(5, 0, 10); // Push back slightly from bigger table gap
+    const forward = new THREE.Vector3();
+    camera.getWorldDirection(forward);
+    controls.target.copy(camera.position).addScaledVector(forward, 0.1);
+    controls.update();
+    setTimeout(() => { cutsceneTableTriggered = false; }, 1000);
+  });
+
+  document.getElementById('cutscene-board').addEventListener('click', function() {
+    this.classList.remove('active');
+    camera.position.set(-30, 0, 0); 
+    const forward = new THREE.Vector3();
+    camera.getWorldDirection(forward);
+    controls.target.copy(camera.position).addScaledVector(forward, 0.1);
+    controls.update();
+    setTimeout(() => { cutsceneBoardTriggered = false; }, 1000);
+  });
+
+  // Expanded boundaries and Object Collisions
+  function isValidPosition(x, z) {
+    // Wall boundaries
+    const inPassage = (x > 32 && x < 58 && z > -42 && z < 42);
+    const inMainRoom = (x > -56 && x < 28 && z > -42 && z < 42);
+    const inOpening = (x >= 28 && x <= 32 && z > 15 && z < 42); 
+    const withinWalls = inPassage || inMainRoom || inOpening;
+
+    if (!withinWalls) return false;
+
+    // Object bounding boxes (approximate based on positions and scales)
+    // Table at (-15, 0)
+    const hitTable = (x > -25 && x < -5 && z > -12 && z < 12);
+    // Chair at (-15, 15)
+    const hitChair = (x > -20 && x < -10 && z > 10 && z < 20);
+    // Bench at (-45, -35)
+    const hitBench = (x > -50 && x < -40 && z > -40 && z < -30);
+    // Cabinet at (-45, 35)
+    const hitCabinet = (x > -50 && x < -40 && z > 30 && z < 40);
+
+    if (hitTable || hitChair || hitBench || hitCabinet) return false;
+
+    return true;
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    
+    const speed = 0.4; // Slightly faster walking for bigger room
+    const forward = new THREE.Vector3();
+    camera.getWorldDirection(forward);
+    forward.y = 0; 
+    forward.normalize();
+
+    const right = new THREE.Vector3();
+    right.crossVectors(camera.up, forward).normalize();
+
+    let moveX = 0;
+    let moveZ = 0;
+
+    if (keys.w) { moveX += forward.x * speed; moveZ += forward.z * speed; }
+    if (keys.s) { moveX -= forward.x * speed; moveZ -= forward.z * speed; }
+    if (keys.a) { moveX += right.x * speed; moveZ += right.z * speed; }
+    if (keys.d) { moveX -= right.x * speed; moveZ -= right.z * speed; }
+
+    const nextX = camera.position.x + moveX;
+    if (isValidPosition(nextX, camera.position.z)) {
+      camera.position.x = nextX;
+      controls.target.x += moveX;
+    }
+
+    const nextZ = camera.position.z + moveZ;
+    if (isValidPosition(camera.position.x, nextZ)) {
+      camera.position.z = nextZ;
+      controls.target.z += moveZ;
+    }
+
+    if (!cutsceneTableTriggered && !cutsceneBoardTriggered) {
+      // Expanded trigger zone so you can activate it by standing *near* the table 
+      // without having to walk inside the physical collision box!
+      const isNearTable = camera.position.x > -30 && camera.position.x < 0 &&
+                          camera.position.z > -15 && camera.position.z < 15;
+
+      if (isNearTable) {
+        cutsceneTableTriggered = true;
+        document.getElementById('cutscene-table').classList.add('active');
+        setTimeout(() => { document.getElementById('newspaper-overlay').classList.add('thrown'); }, 600); 
+      }
+    }
+
+    if (!cutsceneBoardTriggered && !cutsceneTableTriggered) {
+      const isNearLeftBoard = camera.position.x < -40 && 
+                              camera.position.z > -15 && camera.position.z < 15;
+      if (isNearLeftBoard) {
+        cutsceneBoardTriggered = true;
+        document.getElementById('cutscene-board').classList.add('active');
+      }
+    }
+
+    controls.update();
+    renderer.render(scene, camera);
+  }
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  animate();
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
