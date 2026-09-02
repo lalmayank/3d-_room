@@ -101,6 +101,7 @@
       z-index: 100;
       touch-action: none; /* Prevents screen drag/scroll */
       cursor: pointer;
+      display: none; /* Hidden on desktop */
     }
     #joystick-stick {
       position: absolute;
@@ -111,4 +112,8 @@
       border-radius: 50%;
       pointer-events: none; /* Let touches fall through to the zone */
       box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    @media (max-width: 768px) {
+      #joystick-zone { display: block; }
     }
