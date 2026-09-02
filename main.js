@@ -236,28 +236,46 @@
       scene.add(southBoardImg);
   });
 
-  // 2. West Wall Board (Behind table) - ACM Logo Board
-  const acmLogoLoader = new THREE.TextureLoader();
-  acmLogoLoader.load('acm_logo.jpeg', function(texture) {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.minFilter = THREE.LinearMipmapLinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-      texture.generateMipmaps = true;
-      texture.wrapS = THREE.ClampToEdgeWrapping;
-      texture.wrapT = THREE.ClampToEdgeWrapping;
-      
-      // Preserve square aspect ratio with centered logo and clamped background
-      const planeAspect = 37.6 / 23.6;
-      texture.repeat.set(planeAspect, 1.0);
-      texture.offset.set((1 - planeAspect) / 2, 0);
+  // 2. West Wall Board (Behind table) - Centered ACM Chapter Board
+  const acmImage = new Image();
+  acmImage.src = 'acm_logo.jpeg';
+  acmImage.onload = function() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 2048;
+      canvas.height = 1285; // Matches 37.6 / 23.6 aspect ratio
+      const ctx = canvas.getContext('2d');
 
+      // Subtle gradient background blending cleanly to edges
+      const bgGrad = ctx.createRadialGradient(1024, 642, 200, 1024, 642, 1200);
+      bgGrad.addColorStop(0, '#f8fafc');
+      bgGrad.addColorStop(0.7, '#f1f5f9');
+      bgGrad.addColorStop(1, '#e2e8f0');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Subtle border trim
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 12;
+      ctx.strokeRect(24, 24, canvas.width - 48, canvas.height - 48);
+
+      // Exact 1:1 square diamond logo centered with zero distortion
+      const logoSize = 1140;
+      const logoX = (canvas.width - logoSize) / 2;
+      const logoY = (canvas.height - logoSize) / 2;
+      ctx.drawImage(acmImage, logoX, logoY, logoSize, logoSize);
+
+      const canvasTexture = new THREE.CanvasTexture(canvas);
+      canvasTexture.colorSpace = THREE.SRGBColorSpace;
+      canvasTexture.minFilter = THREE.LinearMipmapLinearFilter;
+      canvasTexture.magFilter = THREE.LinearFilter;
+      canvasTexture.generateMipmaps = true;
       if (renderer.capabilities && renderer.capabilities.getMaxAnisotropy) {
-        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        canvasTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
       }
 
       const acmBoardGeo = new THREE.PlaneGeometry(37.6, 23.6); 
       const acmBoardMat = new THREE.MeshStandardMaterial({ 
-        map: texture, 
+        map: canvasTexture, 
         roughness: 0.85,
         metalness: 0.0,
         side: THREE.FrontSide,
@@ -271,7 +289,7 @@
       westBoardImg.rotation.y = Math.PI / 2; 
       westBoardImg.receiveShadow = true;
       scene.add(westBoardImg); 
-  });
+  };
 
   loader.load('psx_-_corkevidence_board_2.glb', function (gltf) {
       const board1 = gltf.scene;
@@ -508,6 +526,154 @@
   const sky2 = new THREE.Mesh(skyGeo, skyMatRoom);
   sky2.position.set(-15, 5, -42.5);
   scene.add(sky2);
+
+  // --- 3D ARCHITECTURAL WINDOW FRAMES WITH SILLS & MULLIONS ---
+  function createWindowFrame(width, height, depth) {
+    const frameGroup = new THREE.Group();
+    const frameMat = new THREE.MeshStandardMaterial({ 
+      color: 0x1e1915, 
+      roughness: 0.7, 
+      metalness: 0.25 
+    });
+    const sillMat = new THREE.MeshStandardMaterial({ 
+      color: 0x16120e, 
+      roughness: 0.65, 
+      metalness: 0.3 
+    });
+
+    const borderThick = 0.8;
+    const frameDepth = depth || 1.4;
+
+    // Outer Top Header
+    const topGeo = new THREE.BoxGeometry(width + borderThick * 2, borderThick, frameDepth);
+    const topMesh = new THREE.Mesh(topGeo, frameMat);
+    topMesh.position.set(0, height / 2 + borderThick / 2, 0);
+    frameGroup.add(topMesh);
+
+    // Outer Bottom Header
+    const botGeo = new THREE.BoxGeometry(width + borderThick * 2, borderThick, frameDepth);
+    const botMesh = new THREE.Mesh(botGeo, frameMat);
+    botMesh.position.set(0, -height / 2 - borderThick / 2, 0);
+    frameGroup.add(botMesh);
+
+    // Outer Left Post
+    const leftGeo = new THREE.BoxGeometry(borderThick, height, frameDepth);
+    const leftMesh = new THREE.Mesh(leftGeo, frameMat);
+    leftMesh.position.set(-width / 2 - borderThick / 2, 0, 0);
+    frameGroup.add(leftMesh);
+
+    // Outer Right Post
+    const rightGeo = new THREE.BoxGeometry(borderThick, height, frameDepth);
+    const rightMesh = new THREE.Mesh(rightGeo, frameMat);
+    rightMesh.position.set(width / 2 + borderThick / 2, 0, 0);
+    frameGroup.add(rightMesh);
+
+    // Protruding Window Sill at bottom
+    const sillGeo = new THREE.BoxGeometry(width + borderThick * 2 + 2.0, 0.7, frameDepth + 2.0);
+    const sillMesh = new THREE.Mesh(sillGeo, sillMat);
+    sillMesh.position.set(0, -height / 2 - borderThick - 0.25, 0.9);
+    frameGroup.add(sillMesh);
+
+    // Grid Mullions: Center Vertical
+    const vertMullionGeo = new THREE.BoxGeometry(0.45, height, frameDepth * 0.7);
+    const vertMullion = new THREE.Mesh(vertMullionGeo, frameMat);
+    vertMullion.position.set(0, 0, 0);
+    frameGroup.add(vertMullion);
+
+    // Grid Mullions: Left & Right Vertical
+    const subVert1 = vertMullion.clone();
+    subVert1.position.set(-width / 3.4, 0, 0);
+    frameGroup.add(subVert1);
+
+    const subVert2 = vertMullion.clone();
+    subVert2.position.set(width / 3.4, 0, 0);
+    frameGroup.add(subVert2);
+
+    // Grid Mullions: Horizontal Dividers
+    const horizMullionGeo = new THREE.BoxGeometry(width, 0.45, frameDepth * 0.7);
+    const horizMullion1 = new THREE.Mesh(horizMullionGeo, frameMat);
+    horizMullion1.position.set(0, height / 3.4, 0);
+    frameGroup.add(horizMullion1);
+
+    const horizMullion2 = new THREE.Mesh(horizMullionGeo, frameMat);
+    horizMullion2.position.set(0, -height / 3.4, 0);
+    frameGroup.add(horizMullion2);
+
+    // Subtle Glass Sheen Pane
+    const glassGeo = new THREE.PlaneGeometry(width, height);
+    const glassMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.12,
+      roughness: 0.1,
+      metalness: 0.1,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.1
+    });
+    const glassMesh = new THREE.Mesh(glassGeo, glassMat);
+    glassMesh.position.set(0, 0, 0.1);
+    frameGroup.add(glassMesh);
+
+    frameGroup.traverse(child => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+
+    return frameGroup;
+  }
+
+  const windowFrame1 = createWindowFrame(16, 18, 1.4);
+  windowFrame1.position.set(45, 5, -42.4);
+  scene.add(windowFrame1);
+
+  const windowFrame2 = createWindowFrame(16, 18, 1.4);
+  windowFrame2.position.set(-15, 5, -42.4);
+  scene.add(windowFrame2);
+
+  // --- VINTAGE PENDANT CEILING LAMP (Over Investigation Table) ---
+  const lampGroup = new THREE.Group();
+  
+  // Hanging black cord
+  const cordGeo = new THREE.CylinderGeometry(0.06, 0.06, 8.5, 8);
+  const cordMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
+  const cord = new THREE.Mesh(cordGeo, cordMat);
+  cord.position.set(-15, 12.75, 0);
+  lampGroup.add(cord);
+
+  // Conical metal lampshade
+  const shadeGeo = new THREE.CylinderGeometry(0.6, 2.8, 1.4, 24, 1, false);
+  const shadeMat = new THREE.MeshStandardMaterial({ 
+    color: 0x242a26, 
+    roughness: 0.4, 
+    metalness: 0.7 
+  });
+  const shade = new THREE.Mesh(shadeGeo, shadeMat);
+  shade.position.set(-15, 8.5, 0);
+  lampGroup.add(shade);
+
+  // Warm glowing bulb
+  const bulbGeo = new THREE.SphereGeometry(0.35, 16, 16);
+  const bulbMat = new THREE.MeshBasicMaterial({ color: 0xffe8b8 });
+  const bulb = new THREE.Mesh(bulbGeo, bulbMat);
+  bulb.position.set(-15, 8.1, 0);
+  lampGroup.add(bulb);
+
+  // Atmospheric warm spotlight shining down directly on tabletop
+  const tableSpot = new THREE.SpotLight(0xfffae0, 550);
+  tableSpot.position.set(-15, 8.0, 0);
+  tableSpot.target.position.set(-15, -4.75, 0);
+  tableSpot.angle = Math.PI / 3.2;
+  tableSpot.penumbra = 0.45;
+  tableSpot.decay = 2;
+  tableSpot.distance = 25;
+  tableSpot.castShadow = true;
+  tableSpot.shadow.bias = -0.001;
+  lampGroup.add(tableSpot);
+  lampGroup.add(tableSpot.target);
+
+  scene.add(lampGroup);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enabled = false; 
