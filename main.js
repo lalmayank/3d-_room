@@ -2,6 +2,18 @@
   import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+  // Enable Three.js file & buffer caching in memory and browser storage
+  THREE.Cache.enabled = true;
+
+  // Register Service Worker for persistent on-disk asset caching
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then((reg) => console.log('Cellar Asset ServiceWorker registered:', reg.scope))
+        .catch((err) => console.warn('ServiceWorker registration error:', err));
+    });
+  }
+
   let isIntroPlaying = true;
   let introStartTime = 0;
 
