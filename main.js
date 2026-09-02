@@ -178,7 +178,7 @@
   }, undefined, handleLoadError);
 
   const textureLoader = new THREE.TextureLoader();
-  textureLoader.load('image.png', function(texture) {
+  textureLoader.load('tabletop.jpg', function(texture) {
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.minFilter = THREE.LinearMipmapLinearFilter;
       texture.magFilter = THREE.LinearFilter;
@@ -207,6 +207,8 @@
   });
 
   const boardTextureLoader = new THREE.TextureLoader();
+  
+  // 1. South Wall Board (Left side of table) - Yearly Events Evidence Board
   boardTextureLoader.load('board.jpeg', function(texture) { 
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.minFilter = THREE.LinearMipmapLinearFilter;
@@ -216,7 +218,6 @@
         texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
       }
 
-      // Fully cover the entire inner surface of the board up to the wooden edges
       const boardImgGeo = new THREE.PlaneGeometry(37.6, 23.6); 
       const boardImgMat = new THREE.MeshStandardMaterial({ 
         map: texture, 
@@ -228,15 +229,44 @@
         polygonOffsetUnits: -1.0
       });
 
-      // 1. South Wall Board Image (Primary board facing North)
       const southBoardImg = new THREE.Mesh(boardImgGeo, boardImgMat);
       southBoardImg.position.set(-15, 5.0, 41.85);
       southBoardImg.rotation.y = Math.PI; 
       southBoardImg.receiveShadow = true;
       scene.add(southBoardImg);
+  });
 
-      // 2. West Wall Board Image (Secondary board facing East)
-      const westBoardImg = new THREE.Mesh(boardImgGeo, boardImgMat);
+  // 2. West Wall Board (Behind table) - ACM Logo Board
+  const acmLogoLoader = new THREE.TextureLoader();
+  acmLogoLoader.load('acm_logo.jpeg', function(texture) {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.generateMipmaps = true;
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      
+      // Preserve square aspect ratio with centered logo and clamped background
+      const planeAspect = 37.6 / 23.6;
+      texture.repeat.set(planeAspect, 1.0);
+      texture.offset.set((1 - planeAspect) / 2, 0);
+
+      if (renderer.capabilities && renderer.capabilities.getMaxAnisotropy) {
+        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      }
+
+      const acmBoardGeo = new THREE.PlaneGeometry(37.6, 23.6); 
+      const acmBoardMat = new THREE.MeshStandardMaterial({ 
+        map: texture, 
+        roughness: 0.85,
+        metalness: 0.0,
+        side: THREE.FrontSide,
+        polygonOffset: true,
+        polygonOffsetFactor: -1.0,
+        polygonOffsetUnits: -1.0
+      });
+
+      const westBoardImg = new THREE.Mesh(acmBoardGeo, acmBoardMat);
       westBoardImg.position.set(-56.85, 5.0, 0); 
       westBoardImg.rotation.y = Math.PI / 2; 
       westBoardImg.receiveShadow = true;
