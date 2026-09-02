@@ -466,7 +466,13 @@
     if (key in keys) keys[key] = false;
   });
 
-  // --- 360 ANALOG JOYSTICK LOGIC ---
+  const instructionsEl = document.getElementById('instructions');
+  const isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.matchMedia('(pointer: coarse)').matches;
+  if (instructionsEl && isTouchDevice) {
+    instructionsEl.textContent = 'Use Joystick to Walk | Drag to Look Around | Walk to investigate';
+  }
+
+  // --- 360 ANALOG JOYSTICK LOGIC (Mobile Touch Only) ---
   let joyDeltaX = 0;
   let joyDeltaY = 0;
   const joyZone = document.getElementById('joystick-zone');
@@ -475,10 +481,10 @@
   
   function handleJoy(e) {
     e.preventDefault();
-    if (e.touches && e.touches.length === 0) return;
+    if (!e.touches || e.touches.length === 0) return;
     
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const clientX = e.touches[0].clientX;
+    const clientY = e.touches[0].clientY;
     
     const rect = joyZone.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
@@ -487,7 +493,7 @@
     let dx = clientX - centerX;
     let dy = clientY - centerY;
     
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    const distance = Math.hypot(dx, dy);
     if (distance > joyMax) {
       dx = dx * (joyMax / distance);
       dy = dy * (joyMax / distance);
@@ -499,20 +505,17 @@
   }
   
   function resetJoy() {
-    joyStick.style.transform = `translate(0px, 0px)`;
+    if (joyStick) joyStick.style.transform = `translate(0px, 0px)`;
     joyDeltaX = 0;
     joyDeltaY = 0;
   }
 
-  joyZone.addEventListener('touchstart', handleJoy, {passive: false});
-  joyZone.addEventListener('touchmove', handleJoy, {passive: false});
-  joyZone.addEventListener('touchend', resetJoy);
-  joyZone.addEventListener('touchcancel', resetJoy);
-  
-  let isJoyDown = false;
-  joyZone.addEventListener('mousedown', (e) => { isJoyDown = true; handleJoy(e); });
-  window.addEventListener('mousemove', (e) => { if (isJoyDown) handleJoy(e); });
-  window.addEventListener('mouseup', () => { if (isJoyDown) { isJoyDown = false; resetJoy(); } });
+  if (joyZone) {
+    joyZone.addEventListener('touchstart', handleJoy, { passive: false });
+    joyZone.addEventListener('touchmove', handleJoy, { passive: false });
+    joyZone.addEventListener('touchend', resetJoy);
+    joyZone.addEventListener('touchcancel', resetJoy);
+  }
 
   let cutsceneTableTriggered = false;
   let cutsceneBoardTriggered = false;
@@ -636,7 +639,7 @@
       }
     }
 
-    const speed = 0.4; 
+    const speed = 0.15; // Realistic walking pace
     const forward = new THREE.Vector3();
     camera.getWorldDirection(forward);
     forward.y = 0; 
@@ -659,6 +662,13 @@
       // 2. Combine Keyboard and Joystick (use whichever is active)
       let inputX = joyDeltaX || keyX;
       let inputY = joyDeltaY || keyY;
+
+      // Normalize diagonal input to keep walking speed uniform
+      const inputLen = Math.hypot(inputX, inputY);
+      if (inputLen > 1) {
+        inputX /= inputLen;
+        inputY /= inputLen;
+      }
 
       // 3. Apply to world movement vectors
       moveX += forward.x * speed * -inputY;

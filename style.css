@@ -88,8 +88,9 @@
     #cutscene-window {
       background-color: black;
     }
-    /* --- 360 ANALOG JOYSTICK --- */
+    /* --- 360 ANALOG JOYSTICK (Mobile Only) --- */
     #joystick-zone {
+      display: none; /* Hidden on laptop/desktop devices */
       position: absolute;
       bottom: 40px;
       left: 40px;
@@ -101,6 +102,8 @@
       z-index: 100;
       touch-action: none; /* Prevents screen drag/scroll */
       cursor: pointer;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
     }
     #joystick-stick {
       position: absolute;
@@ -111,4 +114,24 @@
       border-radius: 50%;
       pointer-events: none; /* Let touches fall through to the zone */
       box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    /* Display joystick toggle only on touch / mobile devices */
+    @media (hover: none) and (pointer: coarse), (max-width: 900px) and (pointer: coarse) {
+      #joystick-zone {
+        display: block;
+      }
+      #instructions {
+        bottom: auto;
+        top: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        width: 90%;
+        font-size: 13px;
+        background: rgba(0, 0, 0, 0.4);
+        padding: 6px 12px;
+        border-radius: 20px;
+        backdrop-filter: blur(4px);
+      }
     }
