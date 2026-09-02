@@ -591,7 +591,7 @@
 
   document.getElementById('cutscene-board').addEventListener('click', function() {
     this.classList.remove('active');
-    camera.position.set(-1.5, 0, 13); 
+    camera.position.set(-5, 0, 24); 
     const forward = new THREE.Vector3(0, 0, 1);
     controls.target.copy(camera.position).addScaledVector(forward, 0.1);
     controls.update();
@@ -798,7 +798,7 @@
         controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
       }
 
-      // 7. STEP 7: TURN SOUTH & WALK 5 STEPS WITH EYES LOCKED ON BOARD (34.5s - 39.0s)
+      // 7. STEP 7: TURN SOUTH & WALK CLOSER TO BOARD WITH EYES LOCKED ON BOARD (34.5s - 40.5s)
       else if (elapsed < 35.5) {
         // 7A: Turn left 90 deg standing in place at table (facing south along +z towards board)
         let t = smoothStep((elapsed - 34.5) / 1.0);
@@ -806,27 +806,28 @@
         camera.position.set(-1.5, 0, 0);
         let forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
         controls.target.copy(camera.position).addScaledVector(forward, 0.1);
-      } else if (elapsed < 38.0) {
-        // 7B: Walk 5 steps ahead (z: 0 -> 13) with eyes strictly locked at the board
-        let t = smoothStep((elapsed - 35.5) / 2.5);
-        let curZ = t * 13;
+      } else if (elapsed < 39.5) {
+        // 7B: Walk closer to the board (z: 0 -> 24, x: -1.5 -> -5) with eyes strictly locked on the board
+        let t = smoothStep((elapsed - 35.5) / 4.0);
+        let curX = -1.5 - (t * 3.5);
+        let curZ = t * 24;
         let walkBob = Math.sin((elapsed - 35.5) * 8.5) * 0.16;
-        camera.position.set(-1.5, walkBob, curZ);
+        camera.position.set(curX, walkBob, curZ);
 
         const southBoardTarget = new THREE.Vector3(-15, 5.0, 42.5);
         const lookDir = new THREE.Vector3().subVectors(southBoardTarget, camera.position).normalize();
         controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
-      } else if (elapsed < 39.0) {
-        // 7C: Pause 1s standing at (-1.5, 0, 13) with eyes locked on the board
-        camera.position.set(-1.5, 0, 13);
+      } else if (elapsed < 40.5) {
+        // 7C: Pause 1s standing close at (-5, 0, 24) with eyes locked on the board
+        camera.position.set(-5, 0, 24);
         const southBoardTarget = new THREE.Vector3(-15, 5.0, 42.5);
         const lookDir = new THREE.Vector3().subVectors(southBoardTarget, camera.position).normalize();
         controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
       }
 
-      // 8. DIRECT TRANSITION TO THE BOARD CUTSCENE (39.0s+)
+      // 8. DIRECT TRANSITION TO THE BOARD CUTSCENE (40.5s+)
       else {
-        camera.position.set(-1.5, 0, 13);
+        camera.position.set(-5, 0, 24);
         const southBoardTarget = new THREE.Vector3(-15, 5.0, 42.5);
         const lookDir = new THREE.Vector3().subVectors(southBoardTarget, camera.position).normalize();
         controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
