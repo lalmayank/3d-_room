@@ -84,6 +84,10 @@
       background-image: url('board_evidence.jpg'); 
       background-size: contain; 
     }
+
+    #cutscene-window {
+      background-color: black;
+    }
     /* --- 360 ANALOG JOYSTICK --- */
     #joystick-zone {
       position: absolute;
