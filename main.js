@@ -17,15 +17,12 @@
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   document.body.appendChild(renderer.domElement);
 
-  const ambientLight = new THREE.AmbientLight(0xaad3ff, 1.0); 
+  const ambientLight = new THREE.AmbientLight(0xaad3ff, 0.8); 
   scene.add(ambientLight);
 
-  const roomFillLight = new THREE.PointLight(0xfff0dd, 250, 200);
-  roomFillLight.position.set(-15, 12, 0); 
-  roomFillLight.castShadow = true;
-  roomFillLight.shadow.mapSize.width = 2048;
-  roomFillLight.shadow.mapSize.height = 2048;
-  roomFillLight.shadow.bias = -0.001;
+  const roomFillLight = new THREE.PointLight(0xfff0dd, 100, 200);
+  roomFillLight.position.set(-15, 6, 0); 
+  roomFillLight.castShadow = false;
   scene.add(roomFillLight);
 
   const northWall = new THREE.Group(); 
@@ -48,7 +45,7 @@
   innerWall.position.set(30, 0, -15);  
   scene.add(innerWall);
 
-  const sun1 = new THREE.DirectionalLight(0xffcba3, 5.0);
+  const sun1 = new THREE.DirectionalLight(0xffcba3, 2.5);
   sun1.position.set(45, 10, -60); 
   sun1.target.position.set(45, -5, 20); 
   sun1.castShadow = true;
@@ -64,7 +61,7 @@
   scene.add(sun1);
   scene.add(sun1.target);
 
-  const sun2 = new THREE.DirectionalLight(0xffcba3, 6.0);
+  const sun2 = new THREE.DirectionalLight(0xffcba3, 3.0);
   sun2.position.set(-15, 10, -60); 
   sun2.target.position.set(-15, -5, 20);
   sun2.castShadow = true;
@@ -100,6 +97,85 @@
 
       gltf.scene.traverse((child) => {
         if (child.isMesh && child.material) brickMaterial = child.material;
+      });
+
+      // Procedural Hardwood Parquet Tile Floor Texture
+      function createWoodFloorTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1024;
+        canvas.height = 1024;
+        const ctx = canvas.getContext('2d');
+
+        // Warm oak wood undertone
+        ctx.fillStyle = '#6e4c33';
+        ctx.fillRect(0, 0, 1024, 1024);
+
+        const numRows = 8;
+        const rowHeight = 1024 / numRows;
+        const numCols = 4;
+        const colWidth = 1024 / numCols;
+
+        const plankTones = [
+          '#7c583c', '#67472e', '#735036', '#5d3d25', 
+          '#835e41', '#6b4c32', '#77543a', '#604128'
+        ];
+
+        for (let r = 0; r < numRows; r++) {
+          const offset = (r % 2) * (colWidth / 2);
+          for (let c = -1; c <= numCols; c++) {
+            const x = c * colWidth + offset;
+            const y = r * rowHeight;
+            const toneIdx = Math.floor(Math.abs(Math.sin(r * 17 + c * 11)) * plankTones.length) % plankTones.length;
+            
+            ctx.fillStyle = plankTones[toneIdx];
+            ctx.fillRect(x + 2, y + 2, colWidth - 4, rowHeight - 4);
+
+            // Subtle wood grain fibers
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.09)';
+            for (let g = 0; g < 9; g++) {
+              const gy = y + 4 + g * (rowHeight / 10);
+              ctx.fillRect(x + 2, gy, colWidth - 4, 1.5);
+            }
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            for (let g = 0; g < 5; g++) {
+              const gy = y + 8 + g * (rowHeight / 6);
+              ctx.fillRect(x + 2, gy, colWidth - 4, 1.0);
+            }
+          }
+        }
+
+        // Plank groove bevels (dark realistic seams)
+        ctx.strokeStyle = '#2b1b12';
+        ctx.lineWidth = 3;
+        for (let r = 0; r <= numRows; r++) {
+          ctx.beginPath();
+          ctx.moveTo(0, r * rowHeight);
+          ctx.lineTo(1024, r * rowHeight);
+          ctx.stroke();
+        }
+        for (let r = 0; r < numRows; r++) {
+          const offset = (r % 2) * (colWidth / 2);
+          for (let c = 0; c <= numCols; c++) {
+            ctx.beginPath();
+            ctx.moveTo(c * colWidth + offset, r * rowHeight);
+            ctx.lineTo(c * colWidth + offset, (r + 1) * rowHeight);
+            ctx.stroke();
+          }
+        }
+
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(12, 9);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        return tex;
+      }
+
+      const woodFloorTex = createWoodFloorTexture();
+      const woodFloorMat = new THREE.MeshStandardMaterial({
+        map: woodFloorTex,
+        roughness: 0.82, // Natural matte hardwood finish - prevents harsh specular glare
+        metalness: 0.02
       });
 
       if (brickMaterial) {
@@ -149,7 +225,7 @@
         ceilingMesh.position.set(0, 17, 0);
         scene.add(ceilingMesh);
 
-        const floorMesh = new THREE.Mesh(ceilingGeo, brickMaterial);
+        const floorMesh = new THREE.Mesh(ceilingGeo, woodFloorMat);
         floorMesh.position.set(0, -17, 0);
         scene.add(floorMesh);
 
@@ -510,12 +586,12 @@
   sky1.position.set(45, 5, -42.5); 
   scene.add(sky1);
 
-  const projectorLight = new THREE.SpotLight(0xffffff, 1500);
-  projectorLight.position.set(45, 10, -43); 
+  const projectorLight = new THREE.SpotLight(0xffffff, 1000);
+  projectorLight.position.set(45, 8, -41.5); 
   projectorLight.target.position.set(45, -15, 10); 
-  projectorLight.angle = Math.PI / 4;
-  projectorLight.penumbra = 0.2;
-  projectorLight.decay = 2;
+  projectorLight.angle = Math.PI / 3.5;
+  projectorLight.penumbra = 0.25;
+  projectorLight.decay = 1.8;
   projectorLight.distance = 150;
   projectorLight.castShadow = true;
   projectorLight.map = tex1Shadow; 
@@ -599,7 +675,7 @@
     horizMullion2.position.set(0, -height / 3.4, 0);
     frameGroup.add(horizMullion2);
 
-    // Subtle Glass Sheen Pane
+    // Subtle Glass Sheen Pane (does not block light or video shadows)
     const glassGeo = new THREE.PlaneGeometry(width, height);
     const glassMat = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
@@ -612,13 +688,13 @@
     });
     const glassMesh = new THREE.Mesh(glassGeo, glassMat);
     glassMesh.position.set(0, 0, 0.1);
+    glassMesh.castShadow = false;
+    glassMesh.receiveShadow = false;
     frameGroup.add(glassMesh);
 
-    frameGroup.traverse(child => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-      }
+    [topMesh, botMesh, leftMesh, rightMesh, sillMesh, vertMullion, subVert1, subVert2, horizMullion1, horizMullion2].forEach(m => {
+      m.castShadow = true;
+      m.receiveShadow = true;
     });
 
     return frameGroup;
@@ -661,19 +737,138 @@
   lampGroup.add(bulb);
 
   // Atmospheric warm spotlight shining down directly on tabletop
-  const tableSpot = new THREE.SpotLight(0xfffae0, 550);
+  const tableSpot = new THREE.SpotLight(0xfffae0, 220);
   tableSpot.position.set(-15, 8.0, 0);
   tableSpot.target.position.set(-15, -4.75, 0);
   tableSpot.angle = Math.PI / 3.2;
-  tableSpot.penumbra = 0.45;
+  tableSpot.penumbra = 0.5;
   tableSpot.decay = 2;
-  tableSpot.distance = 25;
+  tableSpot.distance = 22;
   tableSpot.castShadow = true;
   tableSpot.shadow.bias = -0.001;
   lampGroup.add(tableSpot);
   lampGroup.add(tableSpot.target);
 
   scene.add(lampGroup);
+
+  // --- DETECTIVE DESK PROPS ---
+  const deskProps = new THREE.Group();
+
+  // 1. Classic Green Glass Banker's Desk Lamp
+  const bankerLamp = new THREE.Group();
+  bankerLamp.position.set(-22, -4.7, 7.5);
+  bankerLamp.rotation.y = -Math.PI / 4;
+
+  const brassMat = new THREE.MeshStandardMaterial({ 
+    color: 0xd4af37, 
+    metalness: 0.85, 
+    roughness: 0.25 
+  });
+  const emeraldMat = new THREE.MeshPhysicalMaterial({ 
+    color: 0x0a4d22, 
+    roughness: 0.15, 
+    metalness: 0.1, 
+    transmission: 0.55, 
+    thickness: 0.6,
+    clearcoat: 1.0 
+  });
+
+  // Stepped brass base
+  const baseGeo = new THREE.CylinderGeometry(0.7, 0.8, 0.2, 24);
+  const baseMesh = new THREE.Mesh(baseGeo, brassMat);
+  baseMesh.position.y = 0.1;
+  bankerLamp.add(baseMesh);
+
+  // Brass vertical post and curved neck
+  const postGeo = new THREE.CylinderGeometry(0.08, 0.08, 1.8, 16);
+  const postMesh = new THREE.Mesh(postGeo, brassMat);
+  postMesh.position.set(0, 1.0, 0);
+  bankerLamp.add(postMesh);
+
+  const armGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.8, 12);
+  const armMesh = new THREE.Mesh(armGeo, brassMat);
+  armMesh.rotation.z = Math.PI / 3;
+  armMesh.position.set(-0.25, 2.0, 0);
+  bankerLamp.add(armMesh);
+
+  // Curved emerald green glass shade
+  const shadeBodyGeo = new THREE.CylinderGeometry(0.5, 0.5, 1.4, 24, 1, false, 0, Math.PI);
+  const shadeBody = new THREE.Mesh(shadeBodyGeo, emeraldMat);
+  shadeBody.rotation.z = Math.PI / 2;
+  shadeBody.rotation.y = Math.PI / 2;
+  shadeBody.position.set(-0.5, 2.1, 0);
+  bankerLamp.add(shadeBody);
+
+  // Glowing miniature bulb & localized warm glow
+  const miniBulbGeo = new THREE.SphereGeometry(0.12, 12, 12);
+  const miniBulbMat = new THREE.MeshBasicMaterial({ color: 0xfff0c2 });
+  const miniBulb = new THREE.Mesh(miniBulbGeo, miniBulbMat);
+  miniBulb.position.set(-0.5, 1.95, 0);
+  bankerLamp.add(miniBulb);
+
+  const lampGlow = new THREE.PointLight(0xffe8a0, 45, 8, 2);
+  lampGlow.position.set(-0.5, 1.85, 0);
+  lampGlow.castShadow = false;
+  bankerLamp.add(lampGlow);
+
+  deskProps.add(bankerLamp);
+
+  // 2. Detective Ceramic Coffee Mug
+  const mugGroup = new THREE.Group();
+  mugGroup.position.set(-22, -4.7, -7.0);
+
+  const mugMat = new THREE.MeshStandardMaterial({ color: 0x1f242d, roughness: 0.35 });
+  const mugBodyGeo = new THREE.CylinderGeometry(0.4, 0.35, 0.9, 20);
+  const mugBody = new THREE.Mesh(mugBodyGeo, mugMat);
+  mugBody.position.y = 0.45;
+  mugGroup.add(mugBody);
+
+  const handleGeo = new THREE.TorusGeometry(0.24, 0.06, 8, 16, Math.PI);
+  const handleMesh = new THREE.Mesh(handleGeo, mugMat);
+  handleMesh.position.set(0.42, 0.45, 0);
+  handleMesh.rotation.z = -Math.PI / 2;
+  mugGroup.add(handleMesh);
+
+  const coffeeGeo = new THREE.CircleGeometry(0.36, 16);
+  const coffeeMat = new THREE.MeshStandardMaterial({ color: 0x180f0a, roughness: 0.1 });
+  const coffee = new THREE.Mesh(coffeeGeo, coffeeMat);
+  coffee.rotation.x = -Math.PI / 2;
+  coffee.position.y = 0.86;
+  mugGroup.add(coffee);
+
+  deskProps.add(mugGroup);
+
+  // 3. Leather Investigation Notebook & Pen
+  const notebookGroup = new THREE.Group();
+  notebookGroup.position.set(-8.5, -4.68, 7.2);
+  notebookGroup.rotation.y = Math.PI / 6;
+
+  const leatherMat = new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 0.75 });
+  const paperMat = new THREE.MeshStandardMaterial({ color: 0xf3ede0, roughness: 0.9 });
+  const penMat = new THREE.MeshStandardMaterial({ color: 0x151515, metalness: 0.8, roughness: 0.2 });
+
+  const coverMesh = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 3.0), leatherMat);
+  notebookGroup.add(coverMesh);
+
+  const pageMesh = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.06, 2.8), paperMat);
+  pageMesh.position.y = 0.06;
+  notebookGroup.add(pageMesh);
+
+  const penMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.8, 12), penMat);
+  penMesh.rotation.x = Math.PI / 2;
+  penMesh.rotation.z = Math.PI / 8;
+  penMesh.position.set(0.3, 0.14, 0);
+  notebookGroup.add(penMesh);
+
+  deskProps.add(notebookGroup);
+
+  deskProps.traverse(child => {
+    if (child.isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  scene.add(deskProps);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enabled = false; 
