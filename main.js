@@ -253,6 +253,99 @@
       checkLoad();
   }, undefined, handleLoadError);
 
+  // --- MASTERMIND COUNCIL RUG (Under Table & Chairs) ---
+  function createCouncilRugTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 740;
+    const ctx = canvas.getContext('2d');
+
+    // Deep royal crimson background
+    ctx.fillStyle = '#681516';
+    ctx.fillRect(0, 0, 1024, 740);
+
+    // Multi-band ornamental gold & navy borders
+    ctx.strokeStyle = '#c99a38';
+    ctx.lineWidth = 16;
+    ctx.strokeRect(30, 30, 964, 680);
+
+    ctx.strokeStyle = '#182638';
+    ctx.lineWidth = 24;
+    ctx.strokeRect(54, 54, 916, 632);
+
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(80, 80, 864, 580);
+
+    // Corner decorative florets
+    const corners = [[90, 90], [934, 90], [90, 650], [934, 650]];
+    corners.forEach(([cx, cy]) => {
+      ctx.fillStyle = '#c99a38';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 32, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#182638';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Central Ornate Medallion
+    const centerX = 512;
+    const centerY = 370;
+    
+    ctx.fillStyle = '#182638';
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY, 220, 160, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY, 220, 160, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = '#851c1d';
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY, 150, 105, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = '#f1d279';
+    ctx.lineWidth = 4;
+    for (let a = 0; a < Math.PI * 2; a += Math.PI / 8) {
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(centerX + Math.cos(a) * 140, centerY + Math.sin(a) * 95);
+      ctx.stroke();
+    }
+
+    // Fringe edges (cream fringe at top and bottom)
+    ctx.fillStyle = '#ede5d0';
+    for (let f = 0; f < 1024; f += 8) {
+      ctx.fillRect(f, 0, 4, 18);
+      ctx.fillRect(f, 722, 4, 18);
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  const councilRugTex = createCouncilRugTexture();
+  const councilRugMat = new THREE.MeshStandardMaterial({
+    map: councilRugTex,
+    roughness: 0.88,
+    metalness: 0.05,
+    polygonOffset: true,
+    polygonOffsetFactor: -1.0,
+    polygonOffsetUnits: -1.0
+  });
+  const councilRug = new THREE.Mesh(new THREE.PlaneGeometry(36, 26), councilRugMat);
+  councilRug.rotation.x = -Math.PI / 2;
+  councilRug.position.set(-15, -14.95, 0);
+  councilRug.receiveShadow = true;
+  scene.add(councilRug);
+
   const textureLoader = new THREE.TextureLoader();
   textureLoader.load('tabletop.jpg', function(texture) {
       texture.colorSpace = THREE.SRGBColorSpace;
@@ -394,10 +487,25 @@
   loader.load('wooden_chair.glb', function (gltf) {
       const chair = gltf.scene;
       chair.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
-      chair.position.set(-15, -15, 20); 
       chair.scale.set(12, 12, 12); 
+
+      // Chair 1 (Left flank of table)
+      chair.position.set(-15, -15, 17); 
       chair.rotation.y = Math.PI / 8;
       scene.add(chair);
+
+      // Chair 2 (Right flank of table)
+      const chair2 = chair.clone();
+      chair2.position.set(-15, -15, -17);
+      chair2.rotation.y = Math.PI - Math.PI / 8;
+      scene.add(chair2);
+
+      // Chair 3 (Behind table / Mastermind Head Seat)
+      const chair3 = chair.clone();
+      chair3.position.set(-27, -15, 0);
+      chair3.rotation.y = -Math.PI / 2;
+      scene.add(chair3);
+
       checkLoad();
   }, undefined, handleLoadError);
 
@@ -860,7 +968,77 @@
   penMesh.position.set(0.3, 0.14, 0);
   notebookGroup.add(penMesh);
 
-  deskProps.add(notebookGroup);
+  // 4. Vintage Rotary Telephone
+  const phoneGroup = new THREE.Group();
+  phoneGroup.position.set(-22, -4.7, 4.0);
+  phoneGroup.rotation.y = -Math.PI / 6;
+
+  const phoneMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2, metalness: 0.4 });
+  const phoneGoldMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.3, metalness: 0.85 });
+
+  // Sloped body
+  const phoneBaseGeo = new THREE.BoxGeometry(1.4, 0.6, 1.3);
+  const phoneBase = new THREE.Mesh(phoneBaseGeo, phoneMat);
+  phoneBase.position.y = 0.3;
+  phoneGroup.add(phoneBase);
+
+  // Rotary Dial
+  const dialGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.08, 18);
+  const dialMesh = new THREE.Mesh(dialGeo, phoneGoldMat);
+  dialMesh.rotation.x = Math.PI / 4;
+  dialMesh.position.set(0, 0.55, 0.2);
+  phoneGroup.add(dialMesh);
+
+  // Cradle & Handset Receiver
+  const handsetBar = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 2.0), phoneMat);
+  handsetBar.position.set(0, 0.8, -0.15);
+  phoneGroup.add(handsetBar);
+
+  const earpiece1 = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 0.3, 16), phoneMat);
+  earpiece1.position.set(0, 0.75, 0.75);
+  phoneGroup.add(earpiece1);
+
+  const earpiece2 = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 0.3, 16), phoneMat);
+  earpiece2.position.set(0, 0.75, -1.05);
+  phoneGroup.add(earpiece2);
+
+  deskProps.add(phoneGroup);
+
+  // 5. Reel-to-Reel Tape Recorder (Audio Heist Briefing)
+  const recorderGroup = new THREE.Group();
+  recorderGroup.position.set(-9.5, -4.7, -6.5);
+  recorderGroup.rotation.y = Math.PI / 8;
+
+  const recChassisMat = new THREE.MeshStandardMaterial({ color: 0x22262c, roughness: 0.4, metalness: 0.6 });
+  const recReelMat = new THREE.MeshStandardMaterial({ color: 0xc8cbd0, roughness: 0.25, metalness: 0.9 });
+  const recTapeMat = new THREE.MeshStandardMaterial({ color: 0x4a2a1a, roughness: 0.8 });
+
+  const chassis = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.4, 1.8), recChassisMat);
+  chassis.position.y = 0.2;
+  recorderGroup.add(chassis);
+
+  // Left Tape Reel
+  const reel1 = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.08, 20), recTapeMat);
+  reel1.position.set(-0.55, 0.44, -0.2);
+  recorderGroup.add(reel1);
+  const hub1 = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.12, 16), recReelMat);
+  hub1.position.set(-0.55, 0.45, -0.2);
+  recorderGroup.add(hub1);
+
+  // Right Tape Reel
+  const reel2 = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.08, 20), recTapeMat);
+  reel2.position.set(0.55, 0.44, -0.2);
+  recorderGroup.add(reel2);
+  const hub2 = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.12, 16), recReelMat);
+  hub2.position.set(0.55, 0.45, -0.2);
+  recorderGroup.add(hub2);
+
+  // Glowing Green REC LED
+  const recLed = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), new THREE.MeshBasicMaterial({ color: 0x00ff66 }));
+  recLed.position.set(0.9, 0.42, 0.6);
+  recorderGroup.add(recLed);
+
+  deskProps.add(recorderGroup);
 
   deskProps.traverse(child => {
     if (child.isMesh) {
@@ -869,6 +1047,529 @@
     }
   });
   scene.add(deskProps);
+
+  // --- HEIST CELLAR ENVIRONMENT & STORAGE PROPS ---
+  const cellarProps = new THREE.Group();
+
+  // Helper: Cardboard Archive Box with "TOP SECRET // CLASSIFIED" label
+  function createArchiveBoxTexture(label) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#b88a58';
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Box tape
+    ctx.fillStyle = '#a67746';
+    ctx.fillRect(0, 230, 512, 52);
+
+    // Printed white stencil label
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(60, 80, 392, 120);
+
+    ctx.strokeStyle = '#c0392b';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(66, 86, 380, 108);
+
+    ctx.fillStyle = '#c0392b';
+    ctx.font = 'bold 30px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('TOP SECRET', 256, 125);
+
+    ctx.fillStyle = '#222222';
+    ctx.font = 'bold 20px monospace';
+    ctx.fillText(label || 'ACM HEIST ARCHIVES', 256, 165);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  const boxTex1 = createArchiveBoxTexture('ACM COUNCIL 2024');
+  const boxTex2 = createArchiveBoxTexture('OPERATION: HEIST');
+  const boxMat1 = new THREE.MeshStandardMaterial({ map: boxTex1, roughness: 0.9 });
+  const boxMat2 = new THREE.MeshStandardMaterial({ map: boxTex2, roughness: 0.9 });
+
+  function addArchiveBox(x, y, z, rotY, mat) {
+    const boxMesh = new THREE.Mesh(new THREE.BoxGeometry(3.0, 2.2, 3.6), mat || boxMat1);
+    boxMesh.position.set(x, y, z);
+    if (rotY) boxMesh.rotation.y = rotY;
+    cellarProps.add(boxMesh);
+  }
+
+  // Stacks beside file cabinet
+  addArchiveBox(-48, -13.9, 23, 0.1, boxMat1);
+  addArchiveBox(-48, -11.7, 23.2, -0.15, boxMat2);
+  addArchiveBox(-48, -9.5, 23.1, 0.05, boxMat1);
+
+  // Stacks beside bookshelf
+  addArchiveBox(8, -13.9, -28, -0.2, boxMat2);
+  addArchiveBox(8, -11.7, -28.2, 0.1, boxMat1);
+
+  // Helper: Tactical Wooden Supply Crate
+  function createWoodenCrate(x, y, z, rotY) {
+    const crateGroup = new THREE.Group();
+    crateGroup.position.set(x, y, z);
+    if (rotY) crateGroup.rotation.y = rotY;
+
+    const crateMat = new THREE.MeshStandardMaterial({ color: 0x5c4028, roughness: 0.85 });
+    const ironCornerMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.3 });
+
+    const mainBody = new THREE.Mesh(new THREE.BoxGeometry(4.2, 3.4, 4.2), crateMat);
+    crateGroup.add(mainBody);
+
+    // Cross braces
+    const braceMat = new THREE.MeshStandardMaterial({ color: 0x48321e, roughness: 0.9 });
+    const b1 = new THREE.Mesh(new THREE.BoxGeometry(4.24, 0.5, 4.24), braceMat);
+    crateGroup.add(b1);
+
+    cellarProps.add(crateGroup);
+  }
+
+  // Corner supply crate stack
+  createWoodenCrate(-48, -13.3, -28, 0.2);
+  createWoodenCrate(-48, -9.9, -28, -0.1);
+
+  // Heavy Steel Dial Safe
+  const safeGroup = new THREE.Group();
+  safeGroup.position.set(-50, -12.6, 17);
+  safeGroup.rotation.y = Math.PI / 2;
+
+  const safeSteelMat = new THREE.MeshStandardMaterial({ color: 0x1a1e24, roughness: 0.4, metalness: 0.8 });
+  const safeGoldMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.25, metalness: 0.9 });
+
+  const safeBody = new THREE.Mesh(new THREE.BoxGeometry(4.0, 4.8, 3.8), safeSteelMat);
+  safeGroup.add(safeBody);
+
+  // Safe Dial & Spoke Turn Wheel
+  const safeDial = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.15, 20), safeGoldMat);
+  safeDial.rotation.x = Math.PI / 2;
+  safeDial.position.set(0.6, 0.2, 1.95);
+  safeGroup.add(safeDial);
+
+  const safeWheelCenter = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.3, 16), safeGoldMat);
+  safeWheelCenter.rotation.x = Math.PI / 2;
+  safeWheelCenter.position.set(-0.6, 0.2, 1.95);
+  safeGroup.add(safeWheelCenter);
+
+  const safeSpoke = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 0.1), safeGoldMat);
+  safeSpoke.position.set(-0.6, 0.2, 2.05);
+  safeGroup.add(safeSpoke);
+
+  cellarProps.add(safeGroup);
+
+  // Standing Brass World Globe (Near Window)
+  const globeGroup = new THREE.Group();
+  globeGroup.position.set(-4, -15, -34);
+
+  const woodTripodMat = new THREE.MeshStandardMaterial({ color: 0x3d2012, roughness: 0.7 });
+  const brassMatGlobe = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.3, metalness: 0.85 });
+  const globeMapMat = new THREE.MeshStandardMaterial({ color: 0x22496a, roughness: 0.6 });
+
+  // Tripod Legs
+  for (let l = 0; l < 3; l++) {
+    const angle = (l * Math.PI * 2) / 3;
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 6.5, 8), woodTripodMat);
+    leg.position.set(Math.cos(angle) * 1.2, 3.2, Math.sin(angle) * 1.2);
+    leg.rotation.z = Math.cos(angle) * 0.2;
+    leg.rotation.x = Math.sin(angle) * 0.2;
+    globeGroup.add(leg);
+  }
+
+  // Central Brass Column & Meridian Ring
+  const col = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 3.0, 12), brassMatGlobe);
+  col.position.y = 6.2;
+  globeGroup.add(col);
+
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.7, 0.08, 12, 32), brassMatGlobe);
+  ring.position.y = 8.0;
+  ring.rotation.y = Math.PI / 4;
+  globeGroup.add(ring);
+
+  // Globe Sphere
+  const globeSphere = new THREE.Mesh(new THREE.SphereGeometry(1.5, 24, 24), globeMapMat);
+  globeSphere.position.y = 8.0;
+  globeSphere.rotation.z = 0.41; // 23.5 degrees Earth tilt
+  globeGroup.add(globeSphere);
+
+  cellarProps.add(globeGroup);
+
+  // Bookshelf Trophy Cup & Blueprint Scrolls
+  const trophyGroup = new THREE.Group();
+  trophyGroup.position.set(5, -3.5, -40);
+
+  const trophyBase = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 0.4, 16), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3 }));
+  trophyGroup.add(trophyBase);
+  const trophyStem = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.8, 12), safeGoldMat);
+  trophyStem.position.y = 0.6;
+  trophyGroup.add(trophyStem);
+  const trophyCup = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.2, 1.0, 16), safeGoldMat);
+  trophyCup.position.y = 1.3;
+  trophyGroup.add(trophyCup);
+
+  cellarProps.add(trophyGroup);
+
+  // Helper: Industrial Caged Wall Sconces
+  function addWallSconce(x, y, z, rotY) {
+    const sconceGroup = new THREE.Group();
+    sconceGroup.position.set(x, y, z);
+    if (rotY) sconceGroup.rotation.y = rotY;
+
+    const ironMat = new THREE.MeshStandardMaterial({ color: 0x1f1a16, roughness: 0.6, metalness: 0.8 });
+    const bulbMat = new THREE.MeshBasicMaterial({ color: 0xffaa44 });
+
+    // Mount Plate
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.2, 0.8), ironMat);
+    sconceGroup.add(plate);
+
+    // Curved Arm & Cage
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.8, 8), ironMat);
+    arm.rotation.z = Math.PI / 2;
+    arm.position.set(0.4, 0.2, 0);
+    sconceGroup.add(arm);
+
+    const cage = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.9, 8, 1, true), ironMat);
+    cage.position.set(0.8, 0, 0);
+    sconceGroup.add(cage);
+
+    const sBulb = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 12), bulbMat);
+    sBulb.position.set(0.8, 0, 0);
+    sconceGroup.add(sBulb);
+
+    const sLight = new THREE.PointLight(0xff9933, 35, 14, 2);
+    sLight.position.set(0.9, 0, 0);
+    sLight.castShadow = false;
+    sconceGroup.add(sLight);
+
+    cellarProps.add(sconceGroup);
+  }
+
+  // Sconces on entryway partition columns
+  addWallSconce(29.8, 4, -13.5, 0);
+  addWallSconce(29.8, 4, 13.5, 0);
+  addWallSconce(57.5, 4, 0, -Math.PI / 2);
+
+  // Standing Mahogany Coat Rack with Fedora & Trench Coat
+  const coatRackGroup = new THREE.Group();
+  coatRackGroup.position.set(20, -15, -35);
+
+  const mahoganyMat = new THREE.MeshStandardMaterial({ color: 0x3b1e10, roughness: 0.65 });
+  const brassHookMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.3, metalness: 0.85 });
+  const fedoraMat = new THREE.MeshStandardMaterial({ color: 0x241e1b, roughness: 0.9 });
+  const coatMat = new THREE.MeshStandardMaterial({ color: 0x302a24, roughness: 0.85 });
+
+  // Base Claw Feet
+  for (let f = 0; f < 4; f++) {
+    const fAngle = (f * Math.PI * 2) / 4;
+    const claw = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 2.2), mahoganyMat);
+    claw.position.set(Math.cos(fAngle) * 1.1, 0.2, Math.sin(fAngle) * 1.1);
+    claw.rotation.y = fAngle;
+    coatRackGroup.add(claw);
+  }
+
+  // Vertical Turned Pole
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.35, 14.5, 16), mahoganyMat);
+  pole.position.y = 7.25;
+  coatRackGroup.add(pole);
+
+  // Brass Hooks
+  for (let h = 0; h < 4; h++) {
+    const hAngle = (h * Math.PI * 2) / 4 + Math.PI / 4;
+    const hookArm = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.08, 8, 16, Math.PI * 0.8), brassHookMat);
+    hookArm.position.set(Math.cos(hAngle) * 0.4, 13.2, Math.sin(hAngle) * 0.4);
+    hookArm.rotation.y = hAngle;
+    hookArm.rotation.x = Math.PI / 6;
+    coatRackGroup.add(hookArm);
+  }
+
+  // Detective Fedora Hat (resting on top hook)
+  const fedoraBrim = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.08, 20), fedoraMat);
+  fedoraBrim.position.set(0.3, 14.0, 0.3);
+  fedoraBrim.rotation.z = -0.2;
+  fedoraBrim.rotation.x = 0.15;
+  coatRackGroup.add(fedoraBrim);
+
+  const fedoraCrown = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.75, 0.7, 16), fedoraMat);
+  fedoraCrown.position.set(0.3, 14.35, 0.3);
+  fedoraCrown.rotation.z = -0.2;
+  fedoraCrown.rotation.x = 0.15;
+  coatRackGroup.add(fedoraCrown);
+
+  // Hanging Detective Trench Coat
+  const coatBody = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 1.4, 6.5, 16, 1, true), coatMat);
+  coatBody.position.set(-0.35, 9.5, -0.35);
+  coatBody.rotation.z = 0.08;
+  coatRackGroup.add(coatBody);
+
+  cellarProps.add(coatRackGroup);
+
+  // Vintage Brass Wall Clock (with real-time ticking hands)
+  const clockGroup = new THREE.Group();
+  clockGroup.position.set(29.7, 8.5, 0);
+  clockGroup.rotation.y = -Math.PI / 2;
+
+  const clockBrassMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.3, metalness: 0.85 });
+
+  // Clock Bezel
+  const bezel = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.3, 0.4, 32), clockBrassMat);
+  bezel.rotation.x = Math.PI / 2;
+  clockGroup.add(bezel);
+
+  // Clock Face Canvas
+  function createClockFaceTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    // Ivory background
+    ctx.fillStyle = '#f6f1e3';
+    ctx.fillRect(0, 0, 512, 512);
+
+    ctx.strokeStyle = '#221a14';
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.arc(256, 256, 230, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Hour numbers
+    ctx.fillStyle = '#1a1816';
+    ctx.font = 'bold 36px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const numerals = ['12', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'];
+    numerals.forEach((num, i) => {
+      const angle = (i * Math.PI * 2) / 12 - Math.PI / 2;
+      const nx = 256 + Math.cos(angle) * 180;
+      const ny = 256 + Math.sin(angle) * 180;
+      ctx.fillText(num, nx, ny);
+    });
+
+    ctx.font = 'bold 16px monospace';
+    ctx.fillStyle = '#8c2424';
+    ctx.fillText('ACM CHRONO', 256, 320);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  const faceMesh = new THREE.Mesh(
+    new THREE.CircleGeometry(2.0, 32),
+    new THREE.MeshBasicMaterial({ map: createClockFaceTexture() })
+  );
+  faceMesh.position.z = 0.21;
+  clockGroup.add(faceMesh);
+
+  // Real-Time Clock Hands
+  let hourPivot = new THREE.Group();
+  let minPivot = new THREE.Group();
+  let secPivot = new THREE.Group();
+
+  const hourHand = new THREE.Mesh(
+    new THREE.BoxGeometry(0.12, 1.1, 0.04),
+    new THREE.MeshBasicMaterial({ color: 0x111111 })
+  );
+  hourHand.position.set(0, 0.45, 0.23);
+  hourPivot.add(hourHand);
+  clockGroup.add(hourPivot);
+
+  const minHand = new THREE.Mesh(
+    new THREE.BoxGeometry(0.08, 1.6, 0.04),
+    new THREE.MeshBasicMaterial({ color: 0x111111 })
+  );
+  minHand.position.set(0, 0.7, 0.24);
+  minPivot.add(minHand);
+  clockGroup.add(minPivot);
+
+  const secondHand = new THREE.Mesh(
+    new THREE.BoxGeometry(0.04, 1.8, 0.02),
+    new THREE.MeshBasicMaterial({ color: 0xcc2222 })
+  );
+  secondHand.position.set(0, 0.75, 0.25);
+  secPivot.add(secondHand);
+  clockGroup.add(secPivot);
+
+  cellarProps.add(clockGroup);
+
+  // Framed Heist Schematics (North Wall)
+  function createSchematicTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 768;
+    const ctx = canvas.getContext('2d');
+
+    // Blueprint deep blue
+    ctx.fillStyle = '#0f2b48';
+    ctx.fillRect(0, 0, 1024, 768);
+
+    // Blueprint grid
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < 1024; x += 32) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 768); ctx.stroke();
+    }
+    for (let y = 0; y < 768; y += 32) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1024, y); ctx.stroke();
+    }
+
+    // Floor plan outlines
+    ctx.strokeStyle = '#8bc34a';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(120, 120, 784, 528);
+
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(180, 180, 320, 220); // Room A
+    ctx.strokeRect(520, 180, 320, 220); // Room B
+    ctx.strokeRect(180, 420, 660, 180); // Vault Chamber
+
+    // Stencil Text
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 28px monospace';
+    ctx.fillText('OPERATION: CODEHEIST // FACILITY SCHEMATICS', 130, 80);
+
+    ctx.fillStyle = '#ff5252';
+    ctx.font = 'bold 22px monospace';
+    ctx.fillText('[ ACCESS POINT: REAR VENTILATION ]', 200, 520);
+    ctx.fillText('[ VAULT LOCATION: CENTRAL CORE ]', 200, 560);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  const schematicFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(10.5, 8.0, 0.4),
+    new THREE.MeshStandardMaterial({ color: 0x1f1610, roughness: 0.7 })
+  );
+  schematicFrame.position.set(18, 5.0, -42.8);
+
+  const schematicContent = new THREE.Mesh(
+    new THREE.PlaneGeometry(9.6, 7.1),
+    new THREE.MeshBasicMaterial({ map: createSchematicTexture() })
+  );
+  schematicContent.position.set(18, 5.0, -42.55);
+
+  cellarProps.add(schematicFrame);
+  cellarProps.add(schematicContent);
+
+  // --- SYNTHESIZED WEB AUDIO HEIST SOUNDS ---
+  let audioCtx = null;
+  function getAudioContext() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    return audioCtx;
+  }
+
+  function playRotaryPhoneSound() {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    for (let i = 0; i < 6; i++) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(800 + Math.random() * 400, now + i * 0.04);
+      gain.gain.setValueAtTime(0.15, now + i * 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.02);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + i * 0.04);
+      osc.stop(now + i * 0.04 + 0.025);
+    }
+
+    const bell1 = ctx.createOscillator();
+    const bell2 = ctx.createOscillator();
+    const bellGain = ctx.createGain();
+    bell1.type = 'sine';
+    bell2.type = 'sine';
+    bell1.frequency.setValueAtTime(1050, now + 0.35);
+    bell2.frequency.setValueAtTime(1250, now + 0.35);
+    bellGain.gain.setValueAtTime(0.2, now + 0.35);
+    bellGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.6);
+    bell1.connect(bellGain);
+    bell2.connect(bellGain);
+    bellGain.connect(ctx.destination);
+    bell1.start(now + 0.35);
+    bell2.start(now + 0.35);
+    bell1.stop(now + 1.6);
+    bell2.stop(now + 1.6);
+  }
+
+  function playTapeRecorderSound() {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    const oscClick = ctx.createOscillator();
+    const gainClick = ctx.createGain();
+    oscClick.type = 'square';
+    oscClick.frequency.setValueAtTime(120, now);
+    oscClick.frequency.exponentialRampToValueAtTime(40, now + 0.08);
+    gainClick.gain.setValueAtTime(0.3, now);
+    gainClick.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+    oscClick.connect(gainClick);
+    gainClick.connect(ctx.destination);
+    oscClick.start(now);
+    oscClick.stop(now + 0.1);
+
+    // Encrypted Morse code beeps: "ACM" (.-  -.-.  --)
+    const morsePattern = [
+      { t: 0.18, d: 0.06 }, { t: 0.28, d: 0.18 },
+      { t: 0.56, d: 0.18 }, { t: 0.78, d: 0.06 }, { t: 0.88, d: 0.18 }, { t: 1.10, d: 0.06 },
+      { t: 1.26, d: 0.18 }, { t: 1.48, d: 0.18 }
+    ];
+    morsePattern.forEach(note => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now + note.t);
+      g.gain.setValueAtTime(0.12, now + note.t);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + note.t + note.d);
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.start(now + note.t);
+      osc.stop(now + note.t + note.d);
+    });
+  }
+
+  // Click listener for interactive audio
+  const propRaycaster = new THREE.Raycaster();
+  const mouseCoord = new THREE.Vector2();
+
+  window.addEventListener('click', (e) => {
+    mouseCoord.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouseCoord.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    propRaycaster.setFromCamera(mouseCoord, camera);
+
+    const phoneHits = propRaycaster.intersectObjects(phoneGroup.children, true);
+    if (phoneHits.length > 0) {
+      playRotaryPhoneSound();
+      return;
+    }
+
+    const recHits = propRaycaster.intersectObjects(recorderGroup.children, true);
+    if (recHits.length > 0) {
+      playTapeRecorderSound();
+      return;
+    }
+  });
+
+  cellarProps.traverse(child => {
+    if (child.isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  scene.add(cellarProps);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enabled = false; 
@@ -1331,9 +2032,31 @@
       }
     }
 
+    // Update Real-Time Wall Clock Hands
+    if (typeof secPivot !== 'undefined' && typeof minPivot !== 'undefined' && typeof hourPivot !== 'undefined') {
+      const nowClock = new Date();
+      const s = nowClock.getSeconds() + nowClock.getMilliseconds() / 1000;
+      const m = nowClock.getMinutes() + s / 60;
+      const h = (nowClock.getHours() % 12) + m / 60;
+      secPivot.rotation.z = -s * (Math.PI * 2 / 60);
+      minPivot.rotation.z = -m * (Math.PI * 2 / 60);
+      hourPivot.rotation.z = -h * (Math.PI * 2 / 12);
+    }
+
     controls.update();
     renderer.render(scene, camera);
   }
+
+  // Hover pointer cursor over interactive objects
+  window.addEventListener('mousemove', (e) => {
+    if (typeof phoneGroup === 'undefined' || typeof recorderGroup === 'undefined') return;
+    mouseCoord.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouseCoord.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    propRaycaster.setFromCamera(mouseCoord, camera);
+
+    const hits = propRaycaster.intersectObjects([...phoneGroup.children, ...recorderGroup.children], true);
+    document.body.style.cursor = hits.length > 0 ? 'pointer' : 'default';
+  });
 
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
