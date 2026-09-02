@@ -83,14 +83,24 @@
   function checkLoad() {
     modelsLoaded++;
     if (modelsLoaded >= 8) { 
-      document.getElementById('loading').style.display = 'none';
-      introStartTime = performance.now(); 
+      const loadingEl = document.getElementById('loading');
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (!introStartTime) introStartTime = performance.now(); 
     }
   }
   function handleLoadError(error) {
     console.error("MODEL LOAD ERROR:", error);
     checkLoad(); 
   }
+
+  // Safety fallback for slow networks / mobile port forwarding
+  setTimeout(() => {
+    const loadingEl = document.getElementById('loading');
+    if (loadingEl && loadingEl.style.display !== 'none') {
+      loadingEl.style.display = 'none';
+      if (!introStartTime) introStartTime = performance.now();
+    }
+  }, 3500);
   
   loader.load('damaged_concrete_tiles__tile_texture.glb', function (gltf) {
       let brickMaterial = null;
@@ -685,10 +695,13 @@
   const skyMat = new THREE.MeshBasicMaterial({ map: tex1 }); 
   const skyMatRoom = new THREE.MeshBasicMaterial({ map: tex2 });
 
-  document.body.addEventListener('click', () => { 
-    video1.play(); 
-    video2.play();
-  }, { once: true });
+  const playVideos = () => {
+    video1.play().catch(() => {}); 
+    video2.play().catch(() => {});
+  };
+  document.body.addEventListener('click', playVideos, { once: true });
+  document.body.addEventListener('touchstart', playVideos, { once: true });
+  document.body.addEventListener('pointerdown', playVideos, { once: true });
   
   const sky1 = new THREE.Mesh(skyGeo, skyMat);
   sky1.position.set(45, 5, -42.5); 
