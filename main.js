@@ -591,7 +591,7 @@
 
   document.getElementById('cutscene-board').addEventListener('click', function() {
     this.classList.remove('active');
-    camera.position.set(-1.5, 0, 0); 
+    camera.position.set(-1.5, 0, 13); 
     const forward = new THREE.Vector3(0, 0, 1);
     controls.target.copy(camera.position).addScaledVector(forward, 0.1);
     controls.update();
@@ -798,25 +798,35 @@
         controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
       }
 
-      // 7. STEP 7: TURN SOUTH TO FACE BOARD (34.5s - 36.5s)
+      // 7. STEP 7: TURN SOUTH & WALK 5 STEPS WITH EYES LOCKED ON BOARD (34.5s - 39.0s)
       else if (elapsed < 35.5) {
-        // Turn left 90 deg standing in place at table (facing south along +z towards board)
+        // 7A: Turn left 90 deg standing in place at table (facing south along +z towards board)
         let t = smoothStep((elapsed - 34.5) / 1.0);
         let angle = (Math.PI / 2) + (t * (Math.PI / 2));
         camera.position.set(-1.5, 0, 0);
         let forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
         controls.target.copy(camera.position).addScaledVector(forward, 0.1);
-      } else if (elapsed < 36.5) {
-        // Hold gaze looking directly at the evidence board
-        camera.position.set(-1.5, 0, 0);
+      } else if (elapsed < 38.0) {
+        // 7B: Walk 5 steps ahead (z: 0 -> 13) with eyes strictly locked at the board
+        let t = smoothStep((elapsed - 35.5) / 2.5);
+        let curZ = t * 13;
+        let walkBob = Math.sin((elapsed - 35.5) * 8.5) * 0.16;
+        camera.position.set(-1.5, walkBob, curZ);
+
+        const southBoardTarget = new THREE.Vector3(-15, 5.0, 42.5);
+        const lookDir = new THREE.Vector3().subVectors(southBoardTarget, camera.position).normalize();
+        controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+      } else if (elapsed < 39.0) {
+        // 7C: Pause 1s standing at (-1.5, 0, 13) with eyes locked on the board
+        camera.position.set(-1.5, 0, 13);
         const southBoardTarget = new THREE.Vector3(-15, 5.0, 42.5);
         const lookDir = new THREE.Vector3().subVectors(southBoardTarget, camera.position).normalize();
         controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
       }
 
-      // 8. DIRECT TRANSITION TO THE BOARD CUTSCENE (36.5s+)
+      // 8. DIRECT TRANSITION TO THE BOARD CUTSCENE (39.0s+)
       else {
-        camera.position.set(-1.5, 0, 0);
+        camera.position.set(-1.5, 0, 13);
         const southBoardTarget = new THREE.Vector3(-15, 5.0, 42.5);
         const lookDir = new THREE.Vector3().subVectors(southBoardTarget, camera.position).normalize();
         controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
