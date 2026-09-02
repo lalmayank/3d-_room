@@ -179,32 +179,68 @@
 
   const textureLoader = new THREE.TextureLoader();
   textureLoader.load('image.png', function(texture) {
-      const blueprintGeo = new THREE.PlaneGeometry(20, 12); 
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.generateMipmaps = true;
+      if (renderer.capabilities && renderer.capabilities.getMaxAnisotropy) {
+        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      }
+
+      // 16:9 Aspect Ratio (19.5 x 11.0) sized to fit the wooden tabletop
+      const blueprintGeo = new THREE.PlaneGeometry(19.5, 11.0); 
       const blueprintMat = new THREE.MeshStandardMaterial({ 
         map: texture, 
-        roughness: 0.9, 
+        roughness: 0.85, 
         metalness: 0.0,
-        transparent: true 
+        polygonOffset: true,
+        polygonOffsetFactor: -1.0,
+        polygonOffsetUnits: -1.0
       });
       const blueprint = new THREE.Mesh(blueprintGeo, blueprintMat);
       blueprint.receiveShadow = true;
       blueprint.castShadow = true;
       blueprint.rotation.x = -Math.PI / 2;
       blueprint.rotation.z = Math.PI / 2; 
-      blueprint.position.set(-15, -4.75, 0); 
+      blueprint.position.set(-15, -4.7, 0); 
       scene.add(blueprint);
   });
 
   const boardTextureLoader = new THREE.TextureLoader();
-  boardTextureLoader.load('board_evidence.jpg', function(texture) { 
-      const boardImgGeo = new THREE.PlaneGeometry(32, 21); 
-      const boardImgMat = new MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
-      const boardImg = new THREE.Mesh(boardImgGeo, boardImgMat);
-      boardImg.receiveShadow = true;
-      boardImg.castShadow = true;
-      boardImg.rotation.y = Math.PI / 2; 
-      boardImg.position.set(-57.9, 5.5, 0); 
-      scene.add(boardImg); 
+  boardTextureLoader.load('board.jpeg', function(texture) { 
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.generateMipmaps = true;
+      if (renderer.capabilities && renderer.capabilities.getMaxAnisotropy) {
+        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      }
+
+      // Fully cover the entire inner surface of the board up to the wooden edges
+      const boardImgGeo = new THREE.PlaneGeometry(37.6, 23.6); 
+      const boardImgMat = new THREE.MeshStandardMaterial({ 
+        map: texture, 
+        roughness: 0.85,
+        metalness: 0.0,
+        side: THREE.FrontSide,
+        polygonOffset: true,
+        polygonOffsetFactor: -1.0,
+        polygonOffsetUnits: -1.0
+      });
+
+      // 1. South Wall Board Image (Primary board facing North)
+      const southBoardImg = new THREE.Mesh(boardImgGeo, boardImgMat);
+      southBoardImg.position.set(-15, 5.0, 41.85);
+      southBoardImg.rotation.y = Math.PI; 
+      southBoardImg.receiveShadow = true;
+      scene.add(southBoardImg);
+
+      // 2. West Wall Board Image (Secondary board facing East)
+      const westBoardImg = new THREE.Mesh(boardImgGeo, boardImgMat);
+      westBoardImg.position.set(-56.85, 5.0, 0); 
+      westBoardImg.rotation.y = Math.PI / 2; 
+      westBoardImg.receiveShadow = true;
+      scene.add(westBoardImg); 
   });
 
   loader.load('psx_-_corkevidence_board_2.glb', function (gltf) {
@@ -545,22 +581,22 @@
   document.getElementById('cutscene-table').addEventListener('click', function() {
     this.classList.remove('active');
     document.getElementById('newspaper-overlay').classList.remove('thrown');
-    camera.position.set(5, 0, 10); 
-    const forward = new THREE.Vector3();
-    camera.getWorldDirection(forward);
+    camera.position.set(-1.5, 0, 0); 
+    const forward = new THREE.Vector3(-1, 0, 0);
     controls.target.copy(camera.position).addScaledVector(forward, 0.1);
     controls.update();
-    setTimeout(() => { cutsceneTableTriggered = false; }, 1000);
+    controls.enabled = true;
+    setTimeout(() => { cutsceneTableTriggered = false; }, 2000);
   });
 
   document.getElementById('cutscene-board').addEventListener('click', function() {
     this.classList.remove('active');
-    camera.position.set(-30, 0, 0); 
-    const forward = new THREE.Vector3();
-    camera.getWorldDirection(forward);
+    camera.position.set(-1.5, 0, 0); 
+    const forward = new THREE.Vector3(0, 0, 1);
     controls.target.copy(camera.position).addScaledVector(forward, 0.1);
     controls.update();
-    setTimeout(() => { cutsceneBoardTriggered = false; }, 1000);
+    controls.enabled = true;
+    setTimeout(() => { cutsceneBoardTriggered = false; }, 2000);
   });
 
   function isValidPosition(x, z) {
@@ -582,60 +618,224 @@
     return true;
   }
 
+  const tableFocusTarget = new THREE.Vector3(-15, -4.75, 0);
+  const southBoardTarget = new THREE.Vector3(-15, 5.0, 42.5);
+
+  let tableCutsceneShown = false;
+  let tableCutsceneHidden = false;
+  let boardCutsceneShown = false;
+
   function animate() {
     requestAnimationFrame(animate);
     
-    // --- SLOWER WAKE UP INTRO SEQUENCE LOGIC ---
+    // --- CINEMATIC AUTO MOVEMENT SEQUENCE ---
     if (isIntroPlaying && introStartTime > 0) {
       const elapsed = (performance.now() - introStartTime) / 1000; 
       const blink = document.getElementById('blink-overlay');
-      let forward = new THREE.Vector3(0, 0, -1);
-      
-      const smoothStep = (t) => t * t * (3 - 2 * t);
+      const smoothStep = (t) => {
+        const c = Math.max(0, Math.min(1, t));
+        return c * c * (3 - 2 * c);
+      };
 
-      // Stretched timeline to 14 seconds for a groggy, natural wake up
-      if (elapsed < 2.5) {
-        // Slowly crack eyes open over 2.5 seconds (opacity down to 0.3)
-        let t = elapsed / 2.5;
-        blink.style.opacity = 1 - (t * 0.7);
-      } else if (elapsed < 3.0) {
-        // Heavy blink closed for 0.5s
-        blink.style.opacity = 1.0;
-      } else if (elapsed < 5.0) {
-        // Open eyes fully over 2 seconds
-        let t = (elapsed - 3.0) / 2.0;
-        blink.style.opacity = 1 - t;
-      } else if (elapsed < 7.5) {
-        // Look Left (taking 2.5 seconds)
-        let t = Math.min((elapsed - 5.0) / 2.5, 1.0);
-        let ease = smoothStep(t);
-        forward.applyAxisAngle(new THREE.Vector3(0, 1, 0), ease * 1.2); 
+      // 1. WAKE UP SEQUENCE (0.0s - 11.0s)
+      if (elapsed < 2.0) {
+        // Crack eyes open
+        let t = elapsed / 2.0;
+        if (blink) blink.style.opacity = 1 - (t * 0.7);
+        controls.target.set(45, -12, 39.9);
+      } else if (elapsed < 2.6) {
+        // Heavy blink
+        if (blink) blink.style.opacity = 1.0;
+        controls.target.set(45, -12, 39.9);
+      } else if (elapsed < 4.5) {
+        // Open eyes fully
+        let t = (elapsed - 2.6) / 1.9;
+        if (blink) blink.style.opacity = 1 - t;
+        controls.target.set(45, -12, 39.9);
+      } else if (elapsed < 6.5) {
+        // Look groggily left
+        let t = smoothStep((elapsed - 4.5) / 2.0);
+        let forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), t * 0.9);
         controls.target.copy(camera.position).addScaledVector(forward, 0.1);
-      } else if (elapsed < 10.0) {
-        // Look Right (taking 2.5 seconds)
-        let t = Math.min((elapsed - 7.5) / 2.5, 1.0);
-        let ease = smoothStep(t);
-        forward.applyAxisAngle(new THREE.Vector3(0, 1, 0), 1.2 - (ease * 2.4)); 
+      } else if (elapsed < 8.5) {
+        // Look groggily right
+        let t = smoothStep((elapsed - 6.5) / 2.0);
+        let forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), 0.9 - (t * 1.8));
         controls.target.copy(camera.position).addScaledVector(forward, 0.1);
-      } else if (elapsed < 11.5) {
-        // Look Center (taking 1.5 seconds)
-        let t = Math.min((elapsed - 10.0) / 1.5, 1.0);
-        let ease = smoothStep(t);
-        forward.applyAxisAngle(new THREE.Vector3(0, 1, 0), -1.2 + (ease * 1.2)); 
+      } else if (elapsed < 9.5) {
+        // Look back center
+        let t = smoothStep((elapsed - 8.5) / 1.0);
+        let forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), -0.9 + (t * 0.9));
         controls.target.copy(camera.position).addScaledVector(forward, 0.1);
-      } else if (elapsed < 14.0) {
-        // Stand Up off the floor (taking 2.5 seconds)
-        let t = Math.min((elapsed - 11.5) / 2.5, 1.0);
-        let ease = smoothStep(t);
-        camera.position.y = -12 + (ease * 12); 
+      } else if (elapsed < 11.0) {
+        // Stand up from floor
+        let t = smoothStep((elapsed - 9.5) / 1.5);
+        camera.position.set(45, -12 + (t * 12), 40);
+        let forward = new THREE.Vector3(0, 0, -1);
         controls.target.copy(camera.position).addScaledVector(forward, 0.1);
-      } else {
-        // Intro complete! Give player control.
+        if (blink) blink.style.display = 'none';
+      }
+
+      // 2. MOVE FORWARD STRAIGHT 12 STEPS (11.0s - 16.5s)
+      else if (elapsed < 16.5) {
+        let t = smoothStep((elapsed - 11.0) / 5.5);
+        let curZ = 40 - (t * 40); // 40 -> 0 (Doorway opening)
+        let walkBob = Math.sin((elapsed - 11.0) * 8.5) * 0.16;
+        camera.position.set(45, walkBob, curZ);
+        let forward = new THREE.Vector3(0, 0, -1);
+        controls.target.copy(camera.position).addScaledVector(forward, 0.1);
+      }
+
+      // 3. TURN LEFT, WALK AHEAD 5 STEPS INSIDE ROOM, WAIT 1 SECOND (16.5s - 21.0s)
+      else if (elapsed < 17.5) {
+        // Turn left to face doorway (-1, 0, 0)
+        let t = smoothStep((elapsed - 16.5) / 1.0);
+        let angle = t * (Math.PI / 2);
+        camera.position.set(45, 0, 0);
+        let forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+        controls.target.copy(camera.position).addScaledVector(forward, 0.1);
+      } else if (elapsed < 20.0) {
+        // Walk forward 5 steps inside the room (45 -> 28)
+        let t = smoothStep((elapsed - 17.5) / 2.5);
+        let curX = 45 - (t * 17); // 45 down to 28
+        let walkBob = Math.sin((elapsed - 17.5) * 8.5) * 0.16;
+        camera.position.set(curX, walkBob, 0);
+        let forward = new THREE.Vector3(-1, 0, 0);
+        controls.target.copy(camera.position).addScaledVector(forward, 0.1);
+      } else if (elapsed < 21.0) {
+        // Wait 1 second facing straight into the room
+        camera.position.set(28, 0, 0);
+        let forward = new THREE.Vector3(-1, 0, 0);
+        controls.target.copy(camera.position).addScaledVector(forward, 0.1);
+      }
+
+      // 4. LOOK IN THE LEFT AND RIGHT, THEN STRAIGHT (21.0s - 24.5s)
+      else if (elapsed < 22.2) {
+        // Look left
+        let t = smoothStep((elapsed - 21.0) / 1.2);
+        let angle = (Math.PI / 2) + (t * 0.65);
+        camera.position.set(28, 0, 0);
+        let forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+        controls.target.copy(camera.position).addScaledVector(forward, 0.1);
+      } else if (elapsed < 23.5) {
+        // Sweep head right
+        let t = smoothStep((elapsed - 22.2) / 1.3);
+        let angle = (Math.PI / 2) + 0.65 - (t * 1.30);
+        camera.position.set(28, 0, 0);
+        let forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+        controls.target.copy(camera.position).addScaledVector(forward, 0.1);
+      } else if (elapsed < 24.5) {
+        // Look straight towards the table
+        let t = smoothStep((elapsed - 23.5) / 1.0);
+        let angle = (Math.PI / 2) - 0.65 + (t * 0.65);
+        camera.position.set(28, 0, 0);
+        let forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+        controls.target.copy(camera.position).addScaledVector(forward, 0.1);
+      }
+
+      // 5. WALK STRAIGHT TOWARDS TABLE (24.5s - 28.5s)
+      else if (elapsed < 28.5) {
+        let t = smoothStep((elapsed - 24.5) / 4.0);
+        let curX = 28 - (t * 29.5); // 28 down to -1.5 (1 more step closer, right at table edge)
+        let walkBob = Math.sin((elapsed - 24.5) * 8.5) * 0.16;
+        camera.position.set(curX, walkBob, 0);
+
+        // Walk looking straight ahead at eye level
+        let forward = new THREE.Vector3(-1, 0, 0);
+        controls.target.copy(camera.position).addScaledVector(forward, 0.1);
+      }
+
+      // 5B. REACH TABLE & WAIT 0.5s LOOKING STRAIGHT (28.5s - 29.0s)
+      else if (elapsed < 29.0) {
+        camera.position.set(-1.5, 0, 0);
+        let forward = new THREE.Vector3(-1, 0, 0);
+        controls.target.copy(camera.position).addScaledVector(forward, 0.1);
+      }
+
+      // 5C. LOOK DOWN SLOWLY AT TABLE STANDING IN ONE PLACE & TRANSITION (29.0s - 30.5s)
+      else if (elapsed < 30.5) {
+        camera.position.set(-1.5, 0, 0); // Strict fixed position - no sliding into table center
+        let t = smoothStep((elapsed - 29.0) / 1.5);
+        let straightTarget = new THREE.Vector3(-10.5, 0, 0);
+        let targetLook = new THREE.Vector3().lerpVectors(straightTarget, tableFocusTarget, t);
+        const lookDir = new THREE.Vector3().subVectors(targetLook, camera.position).normalize();
+        controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+
+        // As we slowly look down, trigger table cutscene
+        if (elapsed >= 30.0 && !tableCutsceneShown) {
+          tableCutsceneShown = true;
+          document.getElementById('cutscene-table').classList.add('active');
+          setTimeout(() => {
+            document.getElementById('newspaper-overlay').classList.add('thrown');
+          }, 200);
+        }
+      }
+
+      // 6. TABLE CUTSCENE FOR 3 SECONDS & RAISE GAZE (30.5s - 34.5s)
+      else if (elapsed < 33.5) {
+        camera.position.set(-1.5, 0, 0);
+        const lookDir = new THREE.Vector3().subVectors(tableFocusTarget, camera.position).normalize();
+        controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+        if (!tableCutsceneShown) {
+          tableCutsceneShown = true;
+          document.getElementById('cutscene-table').classList.add('active');
+          setTimeout(() => {
+            document.getElementById('newspaper-overlay').classList.add('thrown');
+          }, 200);
+        }
+      } else if (elapsed < 34.5) {
+        // Transition back to normal view and raise gaze back to eye level
+        if (!tableCutsceneHidden) {
+          tableCutsceneHidden = true;
+          document.getElementById('newspaper-overlay').classList.remove('thrown');
+          document.getElementById('cutscene-table').classList.remove('active');
+        }
+        camera.position.set(-1.5, 0, 0);
+        let t = smoothStep((elapsed - 33.5) / 1.0);
+        let straightTarget = new THREE.Vector3(-10.5, 0, 0);
+        let targetLook = new THREE.Vector3().lerpVectors(tableFocusTarget, straightTarget, t);
+        const lookDir = new THREE.Vector3().subVectors(targetLook, camera.position).normalize();
+        controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+      }
+
+      // 7. STEP 7: TURN SOUTH TO FACE BOARD (34.5s - 36.5s)
+      else if (elapsed < 35.5) {
+        // Turn left 90 deg standing in place at table (facing south along +z towards board)
+        let t = smoothStep((elapsed - 34.5) / 1.0);
+        let angle = (Math.PI / 2) + (t * (Math.PI / 2));
+        camera.position.set(-1.5, 0, 0);
+        let forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+        controls.target.copy(camera.position).addScaledVector(forward, 0.1);
+      } else if (elapsed < 36.5) {
+        // Hold gaze looking directly at the evidence board
+        camera.position.set(-1.5, 0, 0);
+        const southBoardTarget = new THREE.Vector3(-15, 5.0, 42.5);
+        const lookDir = new THREE.Vector3().subVectors(southBoardTarget, camera.position).normalize();
+        controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+      }
+
+      // 8. DIRECT TRANSITION TO THE BOARD CUTSCENE (36.5s+)
+      else {
+        camera.position.set(-1.5, 0, 0);
+        const southBoardTarget = new THREE.Vector3(-15, 5.0, 42.5);
+        const lookDir = new THREE.Vector3().subVectors(southBoardTarget, camera.position).normalize();
+        controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+        if (blink) {
+          blink.style.display = 'none';
+          blink.style.opacity = '0';
+        }
+        if (!boardCutsceneShown) {
+          boardCutsceneShown = true;
+          document.getElementById('cutscene-board').classList.add('active');
+          cutsceneBoardTriggered = true;
+          cutsceneTableTriggered = true;
+          setTimeout(() => {
+            cutsceneBoardTriggered = false;
+            cutsceneTableTriggered = false;
+          }, 2000);
+        }
         isIntroPlaying = false;
-        controls.enabled = true; 
-        camera.position.y = 0; // Explicitly enforce standing height
-        controls.target.copy(camera.position).addScaledVector(forward, 0.1);
-        if(blink) blink.style.display = 'none'; 
+        controls.enabled = true;
       }
     }
 
