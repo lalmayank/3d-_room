@@ -1,14 +1,19 @@
-    body { 
-      margin: 0; 
-      overflow: hidden; 
-      background-color: #87CEEB; 
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #87CEEB;
+      cursor: none;
     }
-    canvas { 
-      display: block; 
+
+    canvas {
+      display: block;
+      cursor: none !important;
     }
+
     #loading {
       position: absolute;
-      top: 50%; left: 50%;
+      top: 50%;
+      left: 50%;
       transform: translate(-50%, -50%);
       color: white;
       font-family: monospace;
@@ -17,9 +22,11 @@
       z-index: 10;
       font-weight: bold;
     }
+
     #instructions {
       position: absolute;
-      bottom: 20px; left: 20px;
+      bottom: 20px;
+      left: 20px;
       color: rgba(255, 255, 255, 0.9);
       font-weight: bold;
       font-family: sans-serif;
@@ -29,17 +36,21 @@
 
     #blink-overlay {
       position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
       background-color: black;
-      z-index: 99; 
+      z-index: 99;
       pointer-events: none;
     }
 
     .cutscene-screen {
       position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
       background-color: rgba(0, 0, 0, 0.9);
       opacity: 0;
       pointer-events: none;
@@ -48,79 +59,90 @@
       background-position: center;
       background-repeat: no-repeat;
     }
+
     .cutscene-screen.active {
       opacity: 1;
-      pointer-events: auto; 
-      cursor: pointer; 
+      pointer-events: auto;
+      cursor: pointer;
     }
 
     #cutscene-table {
       background-image: url('image.png');
-      background-size: 100% 100%; 
-      overflow: hidden; 
+      background-size: 100% 100%;
+      overflow: hidden;
     }
-    
+
     #newspaper-overlay {
       position: absolute;
       top: -50%;
-      left: 150%; 
+      left: 150%;
       transform: translate(-50%, -50%) scale(0.1) rotate(1080deg);
-      width: 80vw; 
+      width: 80vw;
       max-width: 900px;
       opacity: 0;
       transition: all 1.2s cubic-bezier(0.22, 1, 0.36, 1);
       z-index: 105;
-      pointer-events: none; 
+      pointer-events: none;
     }
 
     #newspaper-overlay.thrown {
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%) scale(1) rotate(-8deg); 
+      transform: translate(-50%, -50%) scale(1) rotate(-8deg);
       opacity: 1;
     }
 
     #cutscene-board {
-      background-image: url('board_evidence.jpg'); 
-      background-size: contain; 
+      background-image: url('board_evidence.jpg');
+      background-size: contain;
     }
 
     #cutscene-window {
       background-color: black;
     }
+
     /* --- 360 ANALOG JOYSTICK (Mobile Only) --- */
     #joystick-zone {
-      display: none; /* Hidden on laptop/desktop devices */
+      display: none;
+      /* Hidden on laptop/desktop devices */
       position: absolute;
       bottom: 40px;
       left: 40px;
       width: 120px;
       height: 120px;
-      background: rgba(255,255,255,0.15);
-      border: 2px solid rgba(255,255,255,0.4);
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.4);
       border-radius: 50%;
       z-index: 100;
-      touch-action: none; /* Prevents screen drag/scroll */
+      touch-action: none;
+      /* Prevents screen drag/scroll */
       cursor: pointer;
       backdrop-filter: blur(4px);
       -webkit-backdrop-filter: blur(4px);
     }
+
     #joystick-stick {
       position: absolute;
-      top: 50%; left: 50%;
-      width: 50px; height: 50px;
-      margin-top: -25px; margin-left: -25px;
-      background: rgba(255,255,255,0.7);
+      top: 50%;
+      left: 50%;
+      width: 50px;
+      height: 50px;
+      margin-top: -25px;
+      margin-left: -25px;
+      background: rgba(255, 255, 255, 0.7);
       border-radius: 50%;
-      pointer-events: none; /* Let touches fall through to the zone */
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      pointer-events: none;
+      /* Let touches fall through to the zone */
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
     }
 
     /* Display joystick toggle only on touch / mobile devices */
-    @media (hover: none) and (pointer: coarse), (max-width: 900px) and (pointer: coarse) {
+    @media (hover: none) and (pointer: coarse),
+    (max-width: 900px) and (pointer: coarse) {
       #joystick-zone {
         display: block;
       }
+
       #instructions {
         bottom: auto;
         top: 16px;
