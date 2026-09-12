@@ -1,4 +1,4 @@
-const CACHE_NAME = 'acm-cellar-cache-v1';
+const CACHE_NAME = 'acm-cellar-cache-v2';
 
 // Cache-First strategy: Stores 3D GLB models, videos, textures, and assets persistently in browser
 self.addEventListener('install', (event) => {
@@ -24,6 +24,11 @@ self.addEventListener('fetch', (event) => {
 
   // Ignore non-GET requests or unsupported schemes
   if (event.request.method !== 'GET' || !url.protocol.startsWith('http')) {
+    return;
+  }
+
+  // Bypass cache for development files (.js, .css, .html) so updates are always loaded
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css') || url.pathname.endsWith('.html') || url.pathname === '/') {
     return;
   }
 

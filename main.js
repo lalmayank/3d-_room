@@ -399,7 +399,6 @@
 
   const boardTextureLoader = new THREE.TextureLoader();
   
-  // 1. South Wall Board (Left side of table) - Yearly Events Evidence Board
   boardTextureLoader.load('board.jpeg', function(texture) { 
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.minFilter = THREE.LinearMipmapLinearFilter;
@@ -409,7 +408,8 @@
         texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
       }
 
-      const boardImgGeo = new THREE.PlaneGeometry(37.6, 23.6); 
+      // 1. South Wall Board (Left side of table)
+      const boardImgGeo = new THREE.PlaneGeometry(32, 21); 
       const boardImgMat = new THREE.MeshStandardMaterial({ 
         map: texture, 
         roughness: 0.85,
@@ -421,7 +421,7 @@
       });
 
       const southBoardImg = new THREE.Mesh(boardImgGeo, boardImgMat);
-      southBoardImg.position.set(-15, 5.0, 41.85);
+      southBoardImg.position.set(-15, 5.0, 42.2);
       southBoardImg.rotation.y = Math.PI; 
       southBoardImg.receiveShadow = true;
       scene.add(southBoardImg);
@@ -464,7 +464,7 @@
         canvasTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
       }
 
-      const acmBoardGeo = new THREE.PlaneGeometry(37.6, 23.6); 
+      const acmBoardGeo = new THREE.PlaneGeometry(32, 21); 
       const acmBoardMat = new THREE.MeshStandardMaterial({ 
         map: canvasTexture, 
         roughness: 0.85,
@@ -476,7 +476,7 @@
       });
 
       const westBoardImg = new THREE.Mesh(acmBoardGeo, acmBoardMat);
-      westBoardImg.position.set(-56.85, 5.0, 0); 
+      westBoardImg.position.set(-57.6, 5.0, 0); 
       westBoardImg.rotation.y = Math.PI / 2; 
       westBoardImg.receiveShadow = true;
       scene.add(westBoardImg); 
@@ -2021,8 +2021,8 @@
     const canTriggerCutscene = !isIntroPlaying && !cutsceneTableTriggered && !cutsceneBoardTriggered && !cutsceneWindowTriggered && !cutsceneCabinetTriggered;
 
     if (canTriggerCutscene) {
-      const isNearTable = camera.position.x > -30 && camera.position.x < 0 &&
-                          camera.position.z > -15 && camera.position.z < 15;
+      const isNearTable = camera.position.x > -28 && camera.position.x < -2 &&
+                          camera.position.z > -5 && camera.position.z < 5;
 
       if (isNearTable) {
         cutsceneTableTriggered = true;
