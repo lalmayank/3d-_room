@@ -57,8 +57,10 @@
     }
 
     #cutscene-table {
-      background-image: url('');
-      background-size: 100% 100%; 
+      background-image: url('image.png');
+      background-size: contain; 
+      background-repeat: no-repeat;
+      background-position: center;
       background-color: black;
       overflow: hidden; 
     }
@@ -84,8 +86,10 @@
     }
 
     #cutscene-board {
-      background-image: url('board_evidence.jpg'); 
+      background-image: url('image.png'); 
       background-size: contain; 
+      background-repeat: no-repeat;
+      background-position: center;
     }
 
     #cutscene-window {
