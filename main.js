@@ -89,34 +89,33 @@
   scene.add(sun2);
   scene.add(sun2.target);
 
-  const loader = new GLTFLoader();
-  
-  let modelsLoaded = 0;
-  function checkLoad() {
-    modelsLoaded++;
-    if (modelsLoaded >= 8) { 
-      const loadingEl = document.getElementById('loading');
-      if (loadingEl && !loadingEl.classList.contains('fade-out')) {
-        loadingEl.classList.add('fade-out');
-        setTimeout(() => { loadingEl.style.display = 'none'; }, 1500);
-      }
-      if (!introStartTime) introStartTime = performance.now(); 
+  const manager = new THREE.LoadingManager();
+  manager.onProgress = function (url, itemsLoaded, itemsTotal) {
+    const loadingEl = document.getElementById('loading');
+    if (loadingEl) {
+      const percentage = Math.round((itemsLoaded / 8) * 100);
+      loadingEl.innerText = `Loading Assets... ${Math.min(percentage, 100)}%`;
     }
-  }
-  function handleLoadError(error) {
-    console.error("MODEL LOAD ERROR:", error);
-    checkLoad(); 
-  }
-
-  // Safety fallback for slow networks / mobile port forwarding
-  setTimeout(() => {
+  };
+  manager.onLoad = function () {
     const loadingEl = document.getElementById('loading');
     if (loadingEl && !loadingEl.classList.contains('fade-out')) {
+      loadingEl.innerText = 'Initializing Environment...';
       loadingEl.classList.add('fade-out');
       setTimeout(() => { loadingEl.style.display = 'none'; }, 1500);
-      if (!introStartTime) introStartTime = performance.now();
     }
-  }, 3500);
+    if (!introStartTime) introStartTime = performance.now(); 
+  };
+  manager.onError = function (url) {
+    console.error("MODEL LOAD ERROR:", url);
+  };
+  
+  const loader = new GLTFLoader(manager);
+  
+  // Handled automatically by LoadingManager now, leaving dummy functions to not break the rest of the file
+  let modelsLoaded = 0;
+  function checkLoad() {}
+  function handleLoadError(error) { console.error(error); }
   
   loader.load('damaged_concrete_tiles__tile_texture.glb', function (gltf) {
       let brickMaterial = null;

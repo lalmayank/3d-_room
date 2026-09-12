@@ -23,3 +23,7 @@
 ## 6. Controls Helper UI
 - **File Modified:** `index.html`, `style.css`
 - **Description:** Added a sleek, glassmorphic controls helper card to the bottom-right of the screen so that desktop players can easily see the navigation instructions. The WASD keys were styled with CSS flexbox and 3D borders to physically resemble a cluster of keyboard keys. This card is automatically hidden on mobile devices, which instead use the built-in joystick toggle.
+
+## 7. Port Forwarding Asset Loading Fix
+- **File Modified:** main.js
+- **Description:** Replaced a hardcoded 3.5-second safety fallback timeout with THREE.LoadingManager for the GLTFLoader. Previously, over a slow forwarded port connection, the timeout would trigger and drop the user into an empty room before the heavy walls and props could finish downloading. Now, all 8 models still load simultaneously (maximizing network efficiency), but the loading screen is guaranteed to stay up until 100% of the assets are loaded. Additionally, real-time download percentage progress is now displayed so the user knows the page isn't frozen on slower connections.
