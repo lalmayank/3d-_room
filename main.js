@@ -96,7 +96,10 @@
     modelsLoaded++;
     if (modelsLoaded >= 8) { 
       const loadingEl = document.getElementById('loading');
-      if (loadingEl) loadingEl.style.display = 'none';
+      if (loadingEl && !loadingEl.classList.contains('fade-out')) {
+        loadingEl.classList.add('fade-out');
+        setTimeout(() => { loadingEl.style.display = 'none'; }, 1500);
+      }
       if (!introStartTime) introStartTime = performance.now(); 
     }
   }
@@ -108,8 +111,9 @@
   // Safety fallback for slow networks / mobile port forwarding
   setTimeout(() => {
     const loadingEl = document.getElementById('loading');
-    if (loadingEl && loadingEl.style.display !== 'none') {
-      loadingEl.style.display = 'none';
+    if (loadingEl && !loadingEl.classList.contains('fade-out')) {
+      loadingEl.classList.add('fade-out');
+      setTimeout(() => { loadingEl.style.display = 'none'; }, 1500);
       if (!introStartTime) introStartTime = performance.now();
     }
   }, 3500);
@@ -714,6 +718,7 @@
   document.body.addEventListener('click', playVideos, { once: true });
   document.body.addEventListener('touchstart', playVideos, { once: true });
   document.body.addEventListener('pointerdown', playVideos, { once: true });
+  document.body.addEventListener('keydown', playVideos, { once: true });
   
   const sky1 = new THREE.Mesh(skyGeo, skyMat);
   sky1.position.set(45, 5, -42.5); 
@@ -1675,45 +1680,56 @@
   let cutsceneWindowTriggered = false;
   let cutsceneCabinetTriggered = false;
 
-  document.getElementById('cutscene-cabinet').addEventListener('click', function() {
-    this.classList.remove('active');
-    camera.position.set(-35, 0, 35); 
+  let activeCameraAnimation = null;
+  function smoothCameraReturn(endPos, duration) {
+    const startPos = camera.position.clone();
+    const startTarget = controls.target.clone();
+    
+    // Maintain relative look direction 
     const forward = new THREE.Vector3();
     camera.getWorldDirection(forward);
-    controls.target.copy(camera.position).addScaledVector(forward, 0.1);
-    controls.update();
-    setTimeout(() => { cutsceneCabinetTriggered = false; }, 1000);
+    const endTarget = endPos.clone().addScaledVector(forward, 0.1);
+
+    activeCameraAnimation = {
+      startPos, endPos, startTarget, endTarget,
+      startTime: performance.now(), duration
+    };
+    controls.enabled = false;
+  }
+
+  document.getElementById('cutscene-cabinet').addEventListener('click', function() {
+    this.classList.remove('active');
+    smoothCameraReturn(new THREE.Vector3(-35, 0, 35), 800);
+    setTimeout(() => { cutsceneCabinetTriggered = false; controls.enabled = true; }, 1000);
   });
 
   document.getElementById('cutscene-window').addEventListener('click', function() {
     this.classList.remove('active');
-    camera.position.set(-15, 0, -25); 
-    const forward = new THREE.Vector3();
-    camera.getWorldDirection(forward);
-    controls.target.copy(camera.position).addScaledVector(forward, 0.1);
-    controls.update();
-    setTimeout(() => { cutsceneWindowTriggered = false; }, 1000);
+    smoothCameraReturn(new THREE.Vector3(-15, 0, -25), 800);
+    setTimeout(() => { cutsceneWindowTriggered = false; controls.enabled = true; }, 1000);
   });
 
   document.getElementById('cutscene-table').addEventListener('click', function() {
     this.classList.remove('active');
     document.getElementById('newspaper-overlay').classList.remove('thrown');
-    camera.position.set(-1.5, 0, 0); 
-    const forward = new THREE.Vector3(-1, 0, 0);
-    controls.target.copy(camera.position).addScaledVector(forward, 0.1);
-    controls.update();
-    controls.enabled = true;
-    setTimeout(() => { cutsceneTableTriggered = false; }, 2000);
+    const startPos = camera.position.clone();
+    const startTarget = controls.target.clone();
+    const endPos = new THREE.Vector3(-1.5, 0, 0);
+    const endTarget = endPos.clone().addScaledVector(new THREE.Vector3(-1, 0, 0), 0.1);
+    activeCameraAnimation = { startPos, endPos, startTarget, endTarget, startTime: performance.now(), duration: 800 };
+    controls.enabled = false;
+    setTimeout(() => { cutsceneTableTriggered = false; controls.enabled = true; }, 1000);
   });
 
   document.getElementById('cutscene-board').addEventListener('click', function() {
     this.classList.remove('active');
-    camera.position.set(-5, 0, 24); 
-    const forward = new THREE.Vector3(0, 0, 1);
-    controls.target.copy(camera.position).addScaledVector(forward, 0.1);
-    controls.update();
-    controls.enabled = true;
-    setTimeout(() => { cutsceneBoardTriggered = false; }, 2000);
+    const startPos = camera.position.clone();
+    const startTarget = controls.target.clone();
+    const endPos = new THREE.Vector3(-5, 0, 24);
+    const endTarget = endPos.clone().addScaledVector(new THREE.Vector3(0, 0, 1), 0.1);
+    activeCameraAnimation = { startPos, endPos, startTarget, endTarget, startTime: performance.now(), duration: 800 };
+    controls.enabled = false;
+    setTimeout(() => { cutsceneBoardTriggered = false; controls.enabled = true; }, 1000);
   });
 
   function isValidPosition(x, z) {
@@ -1744,6 +1760,20 @@
 
   function animate() {
     requestAnimationFrame(animate);
+    
+    if (activeCameraAnimation) {
+      const now = performance.now();
+      let t = (now - activeCameraAnimation.startTime) / activeCameraAnimation.duration;
+      if (t > 1) t = 1;
+      
+      const easeInOut = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      camera.position.lerpVectors(activeCameraAnimation.startPos, activeCameraAnimation.endPos, easeInOut);
+      controls.target.lerpVectors(activeCameraAnimation.startTarget, activeCameraAnimation.endTarget, easeInOut);
+      
+      if (t === 1) {
+        activeCameraAnimation = null;
+      }
+    }
     
     // --- CINEMATIC AUTO MOVEMENT SEQUENCE ---
     if (isIntroPlaying && introStartTime > 0) {
@@ -1808,7 +1838,8 @@
         // Turn left to face doorway (-1, 0, 0)
         let t = smoothStep((elapsed - 16.5) / 1.0);
         let angle = t * (Math.PI / 2);
-        camera.position.set(45, 0, 0);
+        let walkBob = Math.sin(5.5 * 8.5) * 0.16 * (1 - t);
+        camera.position.set(45, walkBob, 0);
         let forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
         controls.target.copy(camera.position).addScaledVector(forward, 0.1);
       } else if (elapsed < 20.0) {
@@ -1821,7 +1852,9 @@
         controls.target.copy(camera.position).addScaledVector(forward, 0.1);
       } else if (elapsed < 21.0) {
         // Wait 1 second facing straight into the room
-        camera.position.set(28, 0, 0);
+        let t = smoothStep((elapsed - 20.0) / 1.0);
+        let walkBob = Math.sin(2.5 * 8.5) * 0.16 * (1 - t);
+        camera.position.set(28, walkBob, 0);
         let forward = new THREE.Vector3(-1, 0, 0);
         controls.target.copy(camera.position).addScaledVector(forward, 0.1);
       }
@@ -1864,7 +1897,9 @@
 
       // 5B. REACH TABLE & WAIT 0.5s LOOKING STRAIGHT (28.5s - 29.0s)
       else if (elapsed < 29.0) {
-        camera.position.set(-1.5, 0, 0);
+        let t = smoothStep((elapsed - 28.5) / 0.5);
+        let walkBob = Math.sin(4.0 * 8.5) * 0.16 * (1 - t);
+        camera.position.set(-1.5, walkBob, 0);
         let forward = new THREE.Vector3(-1, 0, 0);
         controls.target.copy(camera.position).addScaledVector(forward, 0.1);
       }
@@ -1936,7 +1971,9 @@
         controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
       } else if (elapsed < 40.5) {
         // 7C: Pause 1s standing close at (-5, 0, 24) with eyes locked on the board
-        camera.position.set(-5, 0, 24);
+        let t = smoothStep((elapsed - 39.5) / 1.0);
+        let walkBob = Math.sin(4.0 * 8.5) * 0.16 * (1 - t);
+        camera.position.set(-5, walkBob, 24);
         const southBoardTarget = new THREE.Vector3(-15, 5.0, 42.5);
         const lookDir = new THREE.Vector3().subVectors(southBoardTarget, camera.position).normalize();
         controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);

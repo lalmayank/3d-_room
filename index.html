@@ -19,7 +19,17 @@
 
 <div id="loading">Loading 3D Models...</div>
 <div id="blink-overlay"></div>
-
+<div id="controls-help">
+  <div class="control-row">
+    <div class="wasd-cluster">
+      <div class="key-row"><span class="key">W</span></div>
+      <div class="key-row"><span class="key">A</span><span class="key">S</span><span class="key">D</span></div>
+    </div>
+    <span>to Walk</span>
+  </div>
+  <p><strong>Drag</strong> to Look</p>
+  <p><strong>Walk up</strong> to Investigate</p>
+</div>
 
 <div id="joystick-zone">
   <div id="joystick-stick"></div>
@@ -39,10 +49,10 @@
     </div>
 </div>
 
-<video id="windowVideo" preload="auto" loop muted autoplay crossOrigin="anonymous" playsinline webkit-playsinline style="display: none;">
+<video id="windowVideo" preload="auto" loop muted autoplay crossOrigin="anonymous" playsinline webkit-playsinline style="position: absolute; width: 0; height: 0; visibility: hidden;">
   <source src="8623-212638552.mp4" type="video/mp4">
 </video>
-<video id="windowVideoRoom" preload="auto" loop muted autoplay crossOrigin="anonymous" playsinline webkit-playsinline style="display: none;">
+<video id="windowVideoRoom" preload="auto" loop muted autoplay crossOrigin="anonymous" playsinline webkit-playsinline style="position: absolute; width: 0; height: 0; visibility: hidden;">
   <source src="12254166_3840_2160_60fps.mp4" type="video/mp4">
 </video>
 
