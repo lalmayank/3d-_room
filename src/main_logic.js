@@ -1841,6 +1841,7 @@ export function initThreeJS(mountElement) {
     let tableCutsceneShown = false;
     let tableCutsceneHidden = false;
     let boardCutsceneShown = false;
+    let cabinetCutsceneShown = false;
   
     function animate() {
       reqId = requestAnimationFrame(animate);
@@ -2070,22 +2071,69 @@ export function initThreeJS(mountElement) {
           controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
         }
   
-        // 8. DIRECT TRANSITION TO THE BOARD CUTSCENE (40.5s+)
-        else {
+        // 8. BOARD CUTSCENE FOR 3 SECONDS (40.5s - 43.5s)
+        else if (elapsed < 43.5) {
           camera.position.set(-5, 0, 24);
           const southBoardTarget = new THREE.Vector3(-15, 5.0, 42.5);
           const lookDir = new THREE.Vector3().subVectors(southBoardTarget, camera.position).normalize();
+          controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+          if (!boardCutsceneShown) {
+            boardCutsceneShown = true;
+            document.getElementById('cutscene-board').classList.add('active');
+          }
+        }
+        // 9. CLOSE BOARD CUTSCENE & TURN TO FILE CABINET (43.5s - 44.5s)
+        else if (elapsed < 44.5) {
+          if (!window.boardCutsceneHidden) {
+            window.boardCutsceneHidden = true;
+            document.getElementById('cutscene-board').classList.remove('active');
+          }
+          let t = smoothStep((elapsed - 43.5) / 1.0);
+          camera.position.set(-5, 0, 24);
+          const startTarget = new THREE.Vector3(-15, 5.0, 42.5);
+          const endTarget = new THREE.Vector3(-45, 0, 35);
+          const currentTarget = new THREE.Vector3().lerpVectors(startTarget, endTarget, t);
+          const lookDir = new THREE.Vector3().subVectors(currentTarget, camera.position).normalize();
+          controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+        }
+        // 10. WALK TO FILE CABINET (44.5s - 48.5s)
+        else if (elapsed < 48.5) {
+          let t = smoothStep((elapsed - 44.5) / 4.0);
+          let curX = -5 - (t * 30);
+          let curZ = 24 + (t * 11);
+          let walkBob = Math.sin((elapsed - 44.5) * 8.5) * 0.16;
+          camera.position.set(curX, walkBob, curZ);
+          const cabinetTarget = new THREE.Vector3(-45, 0, 35);
+          const lookDir = new THREE.Vector3().subVectors(cabinetTarget, camera.position).normalize();
+          controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+        }
+        // 11. PAUSE AT FILE CABINET (48.5s - 49.5s)
+        else if (elapsed < 49.5) {
+          let t = smoothStep((elapsed - 48.5) / 1.0);
+          let walkBob = Math.sin(4.0 * 8.5) * 0.16 * (1 - t);
+          camera.position.set(-35, walkBob, 35);
+          const cabinetTarget = new THREE.Vector3(-45, 0, 35);
+          const lookDir = new THREE.Vector3().subVectors(cabinetTarget, camera.position).normalize();
+          controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+        }
+        // 12. END INTRO AND TRIGGER CABINET CUTSCENE (49.5s+)
+        else {
+          camera.position.set(-35, 0, 35);
+          const cabinetTarget = new THREE.Vector3(-45, 0, 35);
+          const lookDir = new THREE.Vector3().subVectors(cabinetTarget, camera.position).normalize();
           controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
           if (blink) {
             blink.style.display = 'none';
             blink.style.opacity = '0';
           }
-          if (!boardCutsceneShown) {
-            boardCutsceneShown = true;
-            document.getElementById('cutscene-board').classList.add('active');
+          if (!cabinetCutsceneShown) {
+            cabinetCutsceneShown = true;
+            document.getElementById('cutscene-cabinet').classList.add('active');
+            cutsceneCabinetTriggered = true;
             cutsceneBoardTriggered = true;
             cutsceneTableTriggered = true;
             setTimeout(() => {
+              cutsceneCabinetTriggered = false;
               cutsceneBoardTriggered = false;
               cutsceneTableTriggered = false;
             }, 2000);
