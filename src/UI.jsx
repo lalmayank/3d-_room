@@ -37,11 +37,31 @@ export default function UI() {
     </div>
 </div>
 
-<video id="windowVideo" preload="auto" loop muted autoPlay crossOrigin="anonymous" playsInline style={{position: 'absolute', width: '0', height: '0', visibility: 'hidden'}}>
-  <source src="8623-212638552.mp4" type="video/mp4" />
+<video 
+  id="windowVideo" 
+  src="/videos/8623-212638552.mp4" 
+  preload="auto" 
+  loop 
+  muted 
+  autoPlay 
+  crossOrigin="anonymous" 
+  playsInline 
+  style={{position: 'fixed', top: 0, left: 0, width: '1px', height: '1px', opacity: 0.001, pointerEvents: 'none', zIndex: -100}}
+>
+  <source src="/videos/8623-212638552.mp4" type="video/mp4" />
 </video>
-<video id="windowVideoRoom" preload="auto" loop muted autoPlay crossOrigin="anonymous" playsInline style={{position: 'absolute', width: '0', height: '0', visibility: 'hidden'}}>
-  <source src="12254166_3840_2160_60fps.mp4" type="video/mp4" />
+<video 
+  id="windowVideoRoom" 
+  src="/videos/12254166_3840_2160_60fps.mp4" 
+  preload="auto" 
+  loop 
+  muted 
+  autoPlay 
+  crossOrigin="anonymous" 
+  playsInline 
+  style={{position: 'fixed', top: 0, left: 0, width: '1px', height: '1px', opacity: 0.001, pointerEvents: 'none', zIndex: -100}}
+>
+  <source src="/videos/12254166_3840_2160_60fps.mp4" type="video/mp4" />
 </video>
 
     </>

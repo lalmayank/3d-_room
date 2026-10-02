@@ -647,7 +647,13 @@
   const skyGeo = new THREE.PlaneGeometry(16, 18);
 
   const video1 = document.getElementById('windowVideo');
-  video1.playbackRate = 1.8; 
+  if (video1) {
+    video1.muted = true;
+    video1.defaultMuted = true;
+    video1.playsInline = true;
+    video1.playbackRate = 1.8; 
+    video1.play().catch(() => {});
+  }
   
   const tex1 = new THREE.VideoTexture(video1);
   tex1.colorSpace = THREE.SRGBColorSpace;
@@ -656,6 +662,12 @@
   tex1.generateMipmaps = false; 
 
   const video2 = document.getElementById('windowVideoRoom');
+  if (video2) {
+    video2.muted = true;
+    video2.defaultMuted = true;
+    video2.playsInline = true;
+    video2.play().catch(() => {});
+  }
   const tex2 = new THREE.VideoTexture(video2);
   tex2.colorSpace = THREE.SRGBColorSpace;
   tex2.minFilter = THREE.LinearFilter;
@@ -679,7 +691,7 @@
     requestAnimationFrame(updateShadowMask);
     const now = performance.now();
     if (now - lastVidTime > 33) { 
-      if (video1.readyState >= video1.HAVE_CURRENT_DATA) {
+      if (video1 && video1.readyState >= video1.HAVE_CURRENT_DATA) {
         ctx1Shadow.drawImage(video1, 0, 0, canvas1Shadow.width, canvas1Shadow.height);
         tex1Shadow.needsUpdate = true;
       }
@@ -689,7 +701,9 @@
   updateShadowMask();
 
   function setupAutoCrop(video, texture) {
-    video.addEventListener('loadedmetadata', function() {
+    if (!video) return;
+    const applyCrop = () => {
+      if (!video.videoWidth || !video.videoHeight) return;
       const videoAspect = video.videoWidth / video.videoHeight;
       const planeAspect = 16 / 18;
       if (videoAspect > planeAspect) {
@@ -701,7 +715,12 @@
         texture.repeat.set(1, scale);
         texture.offset.set(0, (1 - scale) / 2);
       }
-    });
+    };
+    if (video.readyState >= 1) {
+      applyCrop();
+    } else {
+      video.addEventListener('loadedmetadata', applyCrop, { once: true });
+    }
   }
   setupAutoCrop(video1, tex1);
   setupAutoCrop(video1, tex1Shadow);
@@ -711,8 +730,8 @@
   const skyMatRoom = new THREE.MeshBasicMaterial({ map: tex2 });
 
   const playVideos = () => {
-    video1.play().catch(() => {}); 
-    video2.play().catch(() => {});
+    if (video1 && video1.paused) video1.play().catch(() => {}); 
+    if (video2 && video2.paused) video2.play().catch(() => {});
   };
   document.body.addEventListener('click', playVideos, { once: true });
   document.body.addEventListener('touchstart', playVideos, { once: true });
@@ -1759,6 +1778,13 @@
 
   function animate() {
     requestAnimationFrame(animate);
+
+    if (video1 && !video1.paused && video1.readyState >= video1.HAVE_CURRENT_DATA) {
+      tex1.needsUpdate = true;
+    }
+    if (video2 && !video2.paused && video2.readyState >= video2.HAVE_CURRENT_DATA) {
+      tex2.needsUpdate = true;
+    }
     
     if (activeCameraAnimation) {
       const now = performance.now();
