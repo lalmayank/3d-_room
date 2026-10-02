@@ -77,7 +77,7 @@
     }
 
     #cutscene-table {
-      background-image: url('tabletop.jpg');
+      background-image: url('/tabletop.jpg');
       background-size: contain;
       background-position: center;
       background-repeat: no-repeat;
@@ -86,11 +86,30 @@
     }
 
     #newspaper-overlay {
-      display: none;
+      position: absolute;
+      top: -50%;
+      left: 150%; 
+      transform: translate(-50%, -50%) scale(0.1) rotate(1080deg);
+      width: 25vw; 
+      min-width: 200px;
+      max-width: 400px;
+      opacity: 0;
+      transition: all 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+      z-index: 105;
+      pointer-events: none; 
+      filter: drop-shadow(15px 25px 15px rgba(0, 0, 0, 0.6));
+    }
+
+    #newspaper-overlay.thrown {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(1) rotate(-8deg); 
+      opacity: 1;
+      filter: drop-shadow(3px 8px 10px rgba(0, 0, 0, 0.7));
     }
 
     #cutscene-board {
-      background-image: url('board.jpeg');
+      background-image: url('/board.jpeg');
       background-size: contain;
       background-position: center;
       background-repeat: no-repeat;

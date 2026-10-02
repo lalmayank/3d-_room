@@ -23,7 +23,7 @@ export default function UI() {
   <div id="joystick-stick"></div>
 </div>
 <div id="cutscene-table" className="cutscene-screen" title="Click to close table blueprint">
-    <img id="newspaper-overlay" src="image.png" alt="News Article" />
+    <img id="newspaper-overlay" src="/newspaper.png" alt="News Article" />
 </div>
 <div id="cutscene-board" className="cutscene-screen" title="Click to close board evidence"></div>
 <div id="cutscene-window" className="cutscene-screen" title="Click to step back from window">
@@ -38,10 +38,10 @@ export default function UI() {
 </div>
 
 <video id="windowVideo" preload="auto" loop muted autoPlay crossOrigin="anonymous" playsInline style={{position: 'absolute', width: '0', height: '0', visibility: 'hidden'}}>
-  <source src="8623-212638552.mp4" type="video/mp4" />
+  <source src="/8623-212638552.mp4" type="video/mp4" />
 </video>
 <video id="windowVideoRoom" preload="auto" loop muted autoPlay crossOrigin="anonymous" playsInline style={{position: 'absolute', width: '0', height: '0', visibility: 'hidden'}}>
-  <source src="12254166_3840_2160_60fps.mp4" type="video/mp4" />
+  <source src="/12254166_3840_2160_60fps.mp4" type="video/mp4" />
 </video>
 
     </>
