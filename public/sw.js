@@ -1,6 +1,6 @@
-const CACHE_NAME = 'acm-cellar-cache-v2';
+const CACHE_NAME = 'acm-cellar-cache-v3';
 
-// Cache-First strategy: Stores 3D GLB models, videos, textures, and assets persistently in browser
+// Cache-First strategy: Stores 3D GLB models, textures, and assets persistently in browser
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
@@ -24,6 +24,19 @@ self.addEventListener('fetch', (event) => {
 
   // Ignore non-GET requests or unsupported schemes
   if (event.request.method !== 'GET' || !url.protocol.startsWith('http')) {
+    return;
+  }
+
+  // CRITICAL: Bypass Service Worker for video streaming and HTTP Range requests.
+  // Video playback uses HTTP 206 Range requests; Service Worker interception breaks
+  // browser media buffering and triggers an infinite high-frequency request loop that crashes servers.
+  if (
+    event.request.headers.has('range') ||
+    url.pathname.endsWith('.mp4') ||
+    url.pathname.endsWith('.webm') ||
+    url.pathname.endsWith('.ogg') ||
+    url.pathname.includes('/videos/')
+  ) {
     return;
   }
 

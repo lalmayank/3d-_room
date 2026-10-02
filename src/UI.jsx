@@ -40,29 +40,23 @@ export default function UI() {
 <video 
   id="windowVideo" 
   src="/videos/8623-212638552.mp4" 
-  preload="auto" 
+  preload="metadata" 
   loop 
   muted 
-  autoPlay 
-  crossOrigin="anonymous" 
   playsInline 
+  crossOrigin="anonymous" 
   style={{position: 'fixed', top: 0, left: 0, width: '1px', height: '1px', opacity: 0.001, pointerEvents: 'none', zIndex: -100}}
->
-  <source src="/videos/8623-212638552.mp4" type="video/mp4" />
-</video>
+/>
 <video 
   id="windowVideoRoom" 
   src="/videos/12254166_3840_2160_60fps.mp4" 
-  preload="auto" 
+  preload="metadata" 
   loop 
   muted 
-  autoPlay 
-  crossOrigin="anonymous" 
   playsInline 
+  crossOrigin="anonymous" 
   style={{position: 'fixed', top: 0, left: 0, width: '1px', height: '1px', opacity: 0.001, pointerEvents: 'none', zIndex: -100}}
->
-  <source src="/videos/12254166_3840_2160_60fps.mp4" type="video/mp4" />
-</video>
+/>
 
     </>
   );

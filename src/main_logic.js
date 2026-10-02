@@ -95,6 +95,7 @@ export function initThreeJS(mountElement) {
     scene.add(sun2);
     scene.add(sun2.target);
   
+    let playVideos = () => {};
     const manager = new THREE.LoadingManager();
     manager.onProgress = function (url, itemsLoaded, itemsTotal) {
       const loadingEl = document.getElementById('loading');
@@ -111,6 +112,7 @@ export function initThreeJS(mountElement) {
         setTimeout(() => { loadingEl.style.display = 'none'; }, 1500);
       }
       if (!introStartTime) introStartTime = performance.now(); 
+      playVideos();
     };
     manager.onError = function (url) {
       console.error("MODEL LOAD ERROR:", url);
@@ -658,7 +660,6 @@ export function initThreeJS(mountElement) {
       video1.defaultMuted = true;
       video1.playsInline = true;
       video1.playbackRate = 1.8;
-      video1.play().catch(() => {});
     }
     
     const tex1 = new THREE.VideoTexture(video1);
@@ -672,7 +673,6 @@ export function initThreeJS(mountElement) {
       video2.muted = true;
       video2.defaultMuted = true;
       video2.playsInline = true;
-      video2.play().catch(() => {});
     }
     const tex2 = new THREE.VideoTexture(video2);
     tex2.colorSpace = THREE.SRGBColorSpace;
@@ -735,7 +735,7 @@ export function initThreeJS(mountElement) {
     const skyMat = new THREE.MeshBasicMaterial({ map: tex1 }); 
     const skyMatRoom = new THREE.MeshBasicMaterial({ map: tex2 });
   
-    const playVideos = () => {
+    playVideos = () => {
       if (video1 && video1.paused) video1.play().catch(() => {}); 
       if (video2 && video2.paused) video2.play().catch(() => {});
     };
@@ -743,6 +743,15 @@ export function initThreeJS(mountElement) {
     document.body.addEventListener('touchstart', playVideos, { once: true });
     document.body.addEventListener('pointerdown', playVideos, { once: true });
     document.body.addEventListener('keydown', playVideos, { once: true });
+    
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (video1 && !video1.paused) video1.pause();
+        if (video2 && !video2.paused) video2.pause();
+      } else {
+        playVideos();
+      }
+    });
     
     const sky1 = new THREE.Mesh(skyGeo, skyMat);
     sky1.position.set(45, 5, -42.5); 
