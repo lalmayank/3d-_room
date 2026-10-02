@@ -84,7 +84,7 @@
 - **File Modified:** `src/index.css`, `style.css`, `src/UI.jsx`, `src/main_logic.js`, `main.js`
 - **Description:**
   - Fixed relative CSS background image paths `url('tabletop.jpg')` and `url('board.jpeg')` to absolute paths `/tabletop.jpg` and `/board.jpeg` in both `src/index.css` and `style.css`. In production builds (`npm run preview`), relative URLs resolved to `dist/assets/*.jpg` and returned SPA `index.html` fallback 404 responses, leaving tabletop and board proximity cutscenes completely pitch black.
-  - Fixed newspaper overlay image reference in `src/UI.jsx` to root path `/image.png`.
+  - Fixed newspaper overlay image reference in `src/UI.jsx` to root path `/newspaper.png`.
   - Added explicit JavaScript property assignments `cutscenePlayer.muted = true`, `cutscenePlayer.defaultMuted = true`, and `cutscenePlayer.playsInline = true` in `src/main_logic.js` and `main.js` to bypass React 18's JSX `muted` DOM property bug that caused browser autoplay policy to reject `.play()` calls on `#cutscene-window-player`.
   - Added safety guard checking `cutsceneVid.readyState >= 1` before setting `cutsceneVid.currentTime = video2.currentTime` with a fallback `loadedmetadata` listener, preventing media seek `InvalidStateError` aborts when approaching the window.
 
