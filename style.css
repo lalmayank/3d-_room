@@ -10,23 +10,74 @@
       cursor: none !important;
     }
 
-    #loading {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: white;
-      font-family: monospace;
-      font-size: 24px;
+    #loading-container {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, #1b2028 0%, #0a0c10 100%);
+      z-index: 1000;
+      transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 1.2s;
       pointer-events: none;
-      z-index: 10;
-      font-weight: bold;
-      transition: opacity 1.5s ease-out;
-      opacity: 1;
     }
-    
-    #loading.fade-out {
+
+    #loading-container.fade-out {
       opacity: 0;
+      visibility: hidden;
+    }
+
+    #loading-badge {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: #c9a468;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      padding: 4px 14px;
+      background: rgba(201, 164, 104, 0.12);
+      border: 1px solid rgba(201, 164, 104, 0.3);
+      border-radius: 20px;
+    }
+
+    #loading-title {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      color: #ffffff;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+    }
+
+    #loading-bar-track {
+      width: 260px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 14px;
+    }
+
+    #loading-bar-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #c9a468, #f5d796);
+      transform-origin: left center;
+      transform: scaleX(0);
+      transition: transform 0.25s ease-out;
+      border-radius: 4px;
+    }
+
+    #loading-status {
+      font-family: monospace;
+      font-size: 13px;
+      letter-spacing: 1.5px;
+      color: rgba(255, 255, 255, 0.7);
     }
 
     #instructions {
@@ -73,7 +124,7 @@
     }
 
     #cutscene-table {
-      background-image: url('tabletop.jpg');
+      background-image: url('/tabletop.jpg');
       background-size: contain;
       background-position: center;
       background-repeat: no-repeat;
@@ -105,7 +156,7 @@
     }
 
     #cutscene-board {
-      background-image: url('board.jpeg');
+      background-image: url('/board.jpeg');
       background-size: contain;
       background-position: center;
       background-repeat: no-repeat;
@@ -113,6 +164,14 @@
 
     #cutscene-window {
       background-color: black;
+      overflow: hidden;
+    }
+
+    #cutscene-window-player {
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      display: block;
     }
 
     /* --- 360 ANALOG JOYSTICK (Mobile Only) --- */
@@ -206,7 +265,7 @@
       font-family: monospace;
       font-size: 14px;
       font-weight: bold;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
     }
 
     #controls-help p:last-child {
@@ -228,7 +287,7 @@
       #controls-help {
         display: none;
       }
-      
+
       #joystick-zone {
         display: block;
       }

@@ -1,6 +1,7 @@
   import * as THREE from 'three';
   import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+  import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
   // Enable Three.js file & buffer caching in memory and browser storage
   THREE.Cache.enabled = true;
@@ -89,28 +90,68 @@
   scene.add(sun2);
   scene.add(sun2.target);
 
+  let playVideos = () => {};
+  
+  // Configure DRACOLoader for optimized geometry decompression
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+
+  // --- PROGRESSIVE STAGED ASSET LOADING ---
+  // Stage 1: Core Room Shell (Walls, Floor, Master Table, Chairs) ~15MB total -> Loads in <2s!
+  let stage1Loaded = 0;
+  const stage1Total = 3;
+  let isStage1Done = false;
+
+  function onStage1ModelLoaded() {
+    stage1Loaded++;
+    const barFill = document.getElementById('loading-bar-fill');
+    const statusEl = document.getElementById('loading-status');
+    const pct = Math.min(Math.round((stage1Loaded / stage1Total) * 100), 100);
+    
+    if (barFill) barFill.style.transform = `scaleX(${pct / 100})`;
+    if (statusEl) statusEl.innerText = `Preparing Cellar... ${pct}%`;
+
+    if (stage1Loaded >= stage1Total && !isStage1Done) {
+      isStage1Done = true;
+      const loadingContainer = document.getElementById('loading-container');
+      if (loadingContainer) {
+        if (statusEl) statusEl.innerText = 'Entering Cellar...';
+        setTimeout(() => {
+          loadingContainer.classList.add('fade-out');
+        }, 300);
+      }
+      if (!introStartTime) introStartTime = performance.now();
+      playVideos();
+    }
+  }
+
   const manager = new THREE.LoadingManager();
   manager.onProgress = function (url, itemsLoaded, itemsTotal) {
-    const loadingEl = document.getElementById('loading');
-    if (loadingEl) {
-      const percentage = Math.round((itemsLoaded / 8) * 100);
-      loadingEl.innerText = `Loading Assets... ${Math.min(percentage, 100)}%`;
+    if (!isStage1Done) {
+      const barFill = document.getElementById('loading-bar-fill');
+      const statusEl = document.getElementById('loading-status');
+      const percentage = Math.min(Math.round((itemsLoaded / 8) * 100), 100);
+      if (barFill) barFill.style.transform = `scaleX(${percentage / 100})`;
+      if (statusEl) statusEl.innerText = `Loading Assets... ${percentage}%`;
     }
   };
   manager.onLoad = function () {
-    const loadingEl = document.getElementById('loading');
-    if (loadingEl && !loadingEl.classList.contains('fade-out')) {
-      loadingEl.innerText = 'Initializing Environment...';
-      loadingEl.classList.add('fade-out');
-      setTimeout(() => { loadingEl.style.display = 'none'; }, 1500);
+    if (!isStage1Done) {
+      isStage1Done = true;
+      const loadingContainer = document.getElementById('loading-container');
+      if (loadingContainer) {
+        loadingContainer.classList.add('fade-out');
+      }
+      if (!introStartTime) introStartTime = performance.now(); 
+      playVideos();
     }
-    if (!introStartTime) introStartTime = performance.now(); 
   };
   manager.onError = function (url) {
     console.error("MODEL LOAD ERROR:", url);
   };
   
   const loader = new GLTFLoader(manager);
+  loader.setDRACOLoader(dracoLoader);
   
   // Handled automatically by LoadingManager now, leaving dummy functions to not break the rest of the file
   let modelsLoaded = 0;
@@ -266,6 +307,7 @@
         });
       }
       checkLoad();
+      onStage1ModelLoaded();
   }, undefined, handleLoadError);
 
   loader.load('table.glb', function (gltf) {
@@ -276,6 +318,7 @@
       table.scale.set(4, 4, 4); 
       scene.add(table);
       checkLoad();
+      onStage1ModelLoaded();
   }, undefined, handleLoadError);
 
   // --- MASTERMIND COUNCIL RUG (Under Table & Chairs) ---
@@ -532,6 +575,7 @@
       scene.add(chair3);
 
       checkLoad();
+      onStage1ModelLoaded();
   }, undefined, handleLoadError);
 
   loader.load('bucket_bench_19th_century.glb', function (gltf) {
@@ -647,7 +691,12 @@
   const skyGeo = new THREE.PlaneGeometry(16, 18);
 
   const video1 = document.getElementById('windowVideo');
-  video1.playbackRate = 1.8; 
+  if (video1) {
+    video1.muted = true;
+    video1.defaultMuted = true;
+    video1.playsInline = true;
+    video1.playbackRate = 1.8; 
+  }
   
   const tex1 = new THREE.VideoTexture(video1);
   tex1.colorSpace = THREE.SRGBColorSpace;
@@ -656,11 +705,23 @@
   tex1.generateMipmaps = false; 
 
   const video2 = document.getElementById('windowVideoRoom');
+  if (video2) {
+    video2.muted = true;
+    video2.defaultMuted = true;
+    video2.playsInline = true;
+  }
   const tex2 = new THREE.VideoTexture(video2);
   tex2.colorSpace = THREE.SRGBColorSpace;
   tex2.minFilter = THREE.LinearFilter;
   tex2.magFilter = THREE.LinearFilter;
   tex2.generateMipmaps = false;
+
+  const cutscenePlayer = document.getElementById('cutscene-window-player');
+  if (cutscenePlayer) {
+    cutscenePlayer.muted = true;
+    cutscenePlayer.defaultMuted = true;
+    cutscenePlayer.playsInline = true;
+  }
 
   const canvas1Shadow = document.createElement('canvas');
   canvas1Shadow.width = 854;
@@ -679,7 +740,7 @@
     requestAnimationFrame(updateShadowMask);
     const now = performance.now();
     if (now - lastVidTime > 33) { 
-      if (video1.readyState >= video1.HAVE_CURRENT_DATA) {
+      if (video1 && video1.readyState >= video1.HAVE_CURRENT_DATA) {
         ctx1Shadow.drawImage(video1, 0, 0, canvas1Shadow.width, canvas1Shadow.height);
         tex1Shadow.needsUpdate = true;
       }
@@ -689,7 +750,9 @@
   updateShadowMask();
 
   function setupAutoCrop(video, texture) {
-    video.addEventListener('loadedmetadata', function() {
+    if (!video) return;
+    const applyCrop = () => {
+      if (!video.videoWidth || !video.videoHeight) return;
       const videoAspect = video.videoWidth / video.videoHeight;
       const planeAspect = 16 / 18;
       if (videoAspect > planeAspect) {
@@ -701,7 +764,12 @@
         texture.repeat.set(1, scale);
         texture.offset.set(0, (1 - scale) / 2);
       }
-    });
+    };
+    if (video.readyState >= 1) {
+      applyCrop();
+    } else {
+      video.addEventListener('loadedmetadata', applyCrop, { once: true });
+    }
   }
   setupAutoCrop(video1, tex1);
   setupAutoCrop(video1, tex1Shadow);
@@ -710,14 +778,23 @@
   const skyMat = new THREE.MeshBasicMaterial({ map: tex1 }); 
   const skyMatRoom = new THREE.MeshBasicMaterial({ map: tex2 });
 
-  const playVideos = () => {
-    video1.play().catch(() => {}); 
-    video2.play().catch(() => {});
+  playVideos = () => {
+    if (video1 && video1.paused) video1.play().catch(() => {}); 
+    if (video2 && video2.paused) video2.play().catch(() => {});
   };
   document.body.addEventListener('click', playVideos, { once: true });
   document.body.addEventListener('touchstart', playVideos, { once: true });
   document.body.addEventListener('pointerdown', playVideos, { once: true });
   document.body.addEventListener('keydown', playVideos, { once: true });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (video1 && !video1.paused) video1.pause();
+      if (video2 && !video2.paused) video2.pause();
+    } else {
+      playVideos();
+    }
+  });
   
   const sky1 = new THREE.Mesh(skyGeo, skyMat);
   sky1.position.set(45, 5, -42.5); 
@@ -1704,6 +1781,8 @@
 
   document.getElementById('cutscene-window').addEventListener('click', function() {
     this.classList.remove('active');
+    const cutsceneVid = document.getElementById('cutscene-window-player');
+    if (cutsceneVid) cutsceneVid.pause();
     smoothCameraReturn(new THREE.Vector3(-15, 0, -25), 800);
     setTimeout(() => { cutsceneWindowTriggered = false; controls.enabled = true; }, 1000);
   });
@@ -1759,6 +1838,13 @@
 
   function animate() {
     requestAnimationFrame(animate);
+
+    if (video1 && !video1.paused && video1.readyState >= video1.HAVE_CURRENT_DATA) {
+      tex1.needsUpdate = true;
+    }
+    if (video2 && !video2.paused && video2.readyState >= video2.HAVE_CURRENT_DATA) {
+      tex2.needsUpdate = true;
+    }
     
     if (activeCameraAnimation) {
       const now = performance.now();
@@ -2069,10 +2155,32 @@
 
     if (canTriggerCutscene) {
       const isNearWindow = camera.position.x > -25 && camera.position.x < -5 && 
-                           camera.position.z < -30;
+                           camera.position.z < -34;
       if (isNearWindow) {
         cutsceneWindowTriggered = true;
-        document.getElementById('cutscene-window').classList.add('active');
+        const cutsceneWindow = document.getElementById('cutscene-window');
+        if (cutsceneWindow) cutsceneWindow.classList.add('active');
+        const cutsceneVid = document.getElementById('cutscene-window-player');
+        if (cutsceneVid) {
+          cutsceneVid.muted = true;
+          cutsceneVid.defaultMuted = true;
+          cutsceneVid.playsInline = true;
+          if (video2 && video2.currentTime) {
+            if (cutsceneVid.readyState >= 1) {
+              cutsceneVid.currentTime = video2.currentTime;
+            } else {
+              cutsceneVid.addEventListener('loadedmetadata', () => {
+                if (video2 && video2.currentTime) {
+                  cutsceneVid.currentTime = video2.currentTime;
+                }
+              }, { once: true });
+            }
+          }
+          cutsceneVid.play().catch(err => console.warn('Cutscene video play blocked:', err));
+        }
+        if (video2 && video2.paused) {
+          video2.play().catch(() => {});
+        }
       }
     }
 
