@@ -1787,8 +1787,6 @@ export function initThreeJS(mountElement) {
   
     document.getElementById('cutscene-window').addEventListener('click', function() {
       this.classList.remove('active');
-      const cutsceneVid = document.getElementById('cutscene-window-player');
-      if (cutsceneVid) cutsceneVid.pause();
       smoothCameraReturn(new THREE.Vector3(-15, 0, -25), 800);
       setTimeout(() => { cutsceneWindowTriggered = false; controls.enabled = true; }, 1000);
       
@@ -2207,25 +2205,6 @@ export function initThreeJS(mountElement) {
             cutsceneCabinetTriggered = true;
             cutsceneBoardTriggered = true;
             cutsceneTableTriggered = true;
-            
-            const cutsceneVid = document.getElementById('cutscene-window-player');
-            if (cutsceneVid) {
-              cutsceneVid.muted = true;
-              cutsceneVid.defaultMuted = true;
-              cutsceneVid.playsInline = true;
-              if (video2 && video2.currentTime) {
-                if (cutsceneVid.readyState >= 1) {
-                  cutsceneVid.currentTime = video2.currentTime;
-                } else {
-                  cutsceneVid.addEventListener('loadedmetadata', () => {
-                    if (video2 && video2.currentTime) {
-                      cutsceneVid.currentTime = video2.currentTime;
-                    }
-                  }, { once: true });
-                }
-              }
-              cutsceneVid.play().catch(() => {});
-            }
             if (video2 && video2.paused) {
               video2.play().catch(() => {});
             }
@@ -2313,24 +2292,6 @@ export function initThreeJS(mountElement) {
           cutsceneWindowTriggered = true;
           const cutsceneWindow = document.getElementById('cutscene-window');
           if (cutsceneWindow) cutsceneWindow.classList.add('active');
-          const cutsceneVid = document.getElementById('cutscene-window-player');
-          if (cutsceneVid) {
-            cutsceneVid.muted = true;
-            cutsceneVid.defaultMuted = true;
-            cutsceneVid.playsInline = true;
-            if (video2 && video2.currentTime) {
-              if (cutsceneVid.readyState >= 1) {
-                cutsceneVid.currentTime = video2.currentTime;
-              } else {
-                cutsceneVid.addEventListener('loadedmetadata', () => {
-                  if (video2 && video2.currentTime) {
-                    cutsceneVid.currentTime = video2.currentTime;
-                  }
-                }, { once: true });
-              }
-            }
-            cutsceneVid.play().catch(err => console.warn('Cutscene video play blocked:', err));
-          }
           if (video2 && video2.paused) {
             video2.play().catch(() => {});
           }
