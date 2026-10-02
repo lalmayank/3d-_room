@@ -15,7 +15,7 @@ export default function UI() {
   <div id="loading" style={{ display: 'none' }}></div>
 </div>
 <div id="blink-overlay"></div>
-<div id="controls-help">
+<div id="controls-help" className="hidden-controls">
   <div className="control-row">
     <div className="wasd-cluster">
       <div className="key-row"><span className="key">W</span></div>
@@ -27,7 +27,7 @@ export default function UI() {
   <p><strong>Walk up</strong> to Investigate</p>
 </div>
 
-<div id="joystick-zone">
+<div id="joystick-zone" className="hidden-controls">
   <div id="joystick-stick"></div>
 </div>
 <div id="cutscene-table" className="cutscene-screen" title="Click to close table blueprint">

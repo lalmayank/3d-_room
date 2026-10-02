@@ -1791,6 +1791,11 @@ export function initThreeJS(mountElement) {
       if (cutsceneVid) cutsceneVid.pause();
       smoothCameraReturn(new THREE.Vector3(-15, 0, -25), 800);
       setTimeout(() => { cutsceneWindowTriggered = false; controls.enabled = true; }, 1000);
+      
+      const controlsHelp = document.getElementById('controls-help');
+      if (controlsHelp) controlsHelp.classList.remove('hidden-controls');
+      const joystickZone = document.getElementById('joystick-zone');
+      if (joystickZone) joystickZone.classList.remove('hidden-controls');
     });
   
     document.getElementById('cutscene-table').addEventListener('click', function() {
