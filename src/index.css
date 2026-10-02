@@ -1,0 +1,234 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #87CEEB;
+      cursor: none;
+    }
+
+    canvas {
+      display: block;
+      cursor: none !important;
+    }
+
+    #loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-family: monospace;
+      font-size: 24px;
+      pointer-events: none;
+      z-index: 10;
+      font-weight: bold;
+      transition: opacity 1.5s ease-out;
+      opacity: 1;
+    }
+    
+    #loading.fade-out {
+      opacity: 0;
+    }
+
+    #instructions {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: bold;
+      font-family: sans-serif;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    #blink-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: black;
+      z-index: 99;
+      pointer-events: none;
+    }
+
+    .cutscene-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.9);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.8s ease-in-out;
+      z-index: 100;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .cutscene-screen.active {
+      opacity: 1;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    #cutscene-table {
+      background-image: url('tabletop.jpg');
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-color: rgba(10, 10, 15, 0.95);
+      overflow: hidden;
+    }
+
+    #newspaper-overlay {
+      display: none;
+    }
+
+    #cutscene-board {
+      background-image: url('board.jpeg');
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    #cutscene-window {
+      background-color: black;
+    }
+
+    /* --- 360 ANALOG JOYSTICK (Mobile Only) --- */
+    #joystick-zone {
+      display: none;
+      /* Hidden on laptop/desktop devices */
+      position: absolute;
+      bottom: 40px;
+      left: 40px;
+      width: 120px;
+      height: 120px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 50%;
+      z-index: 100;
+      touch-action: none;
+      /* Prevents screen drag/scroll */
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    #joystick-stick {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 50px;
+      height: 50px;
+      margin-top: -25px;
+      margin-left: -25px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 50%;
+      pointer-events: none;
+      /* Let touches fall through to the zone */
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    #controls-help {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: rgba(255, 255, 255, 0.9);
+      font-family: sans-serif;
+      font-size: 14px;
+      z-index: 5;
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    #controls-help p {
+      margin: 0 0 8px 0;
+      letter-spacing: 0.5px;
+    }
+
+    #controls-help .control-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    #controls-help .wasd-cluster {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    #controls-help .key-row {
+      display: flex;
+      gap: 4px;
+    }
+
+    #controls-help .key {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 4px;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.4);
+      color: #d4af37;
+      font-family: monospace;
+      font-size: 14px;
+      font-weight: bold;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    }
+
+    #controls-help p:last-child {
+      margin: 0;
+    }
+
+    #controls-help strong {
+      color: #d4af37;
+      font-family: monospace;
+      font-size: 15px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* Display joystick toggle only on touch / mobile devices */
+    @media (hover: none) and (pointer: coarse),
+    (max-width: 900px) and (pointer: coarse) {
+      #controls-help {
+        display: none;
+      }
+      
+      #joystick-zone {
+        display: block;
+      }
+
+      #instructions {
+        bottom: auto;
+        top: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        width: 90%;
+        font-size: 13px;
+        background: rgba(0, 0, 0, 0.4);
+        padding: 6px 12px;
+        border-radius: 20px;
+        backdrop-filter: blur(4px);
+      }
+    }
