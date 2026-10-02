@@ -188,13 +188,13 @@
     }
 
     @keyframes hide-fold {
-      0% { transform: scaleX(1); opacity: 1; }
-      99% { transform: scaleX(0); opacity: 1; }
-      100% { transform: scaleX(0); opacity: 0; }
+      0% { transform: scaleY(1); opacity: 1; }
+      99% { transform: scaleY(0); opacity: 1; }
+      100% { transform: scaleY(0); opacity: 0; }
     }
 
     @keyframes show-unfold {
-      0% { transform: translate(-50%, -50%) scaleX(0) scaleY(0.9); opacity: 0; }
+      0% { transform: translate(-50%, -50%) scaleX(0.9) scaleY(0); opacity: 0; }
       10% { opacity: 1; }
       100% { transform: translate(-50%, -50%) scaleX(1) scaleY(1); opacity: 1; }
     }
