@@ -2,44 +2,75 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Interactive 3D Room - Spacious Layout</title>
-  <link rel="stylesheet" href="style.css">
-
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-      }
-    }
-  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Standalone Table Cutscene</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: black;
+      font-family: sans-serif;
+    }
+
+    .cutscene-screen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background-color: black;
+      opacity: 1;
+    }
+
+    #cutscene-table {
+      background-image: url('image.png');
+      background-size: 100% 100%; 
+      overflow: hidden; 
+    }
+    
+    #newspaper-overlay {
+      position: absolute;
+      top: -50%;
+      left: 150%; 
+      transform: translate(-50%, -50%) scale(0.1) rotate(1080deg);
+      width: 25vw; 
+      min-width: 200px;
+      max-width: 400px;
+      opacity: 0;
+      transition: all 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+      z-index: 105;
+      pointer-events: none; 
+      filter: drop-shadow(15px 25px 15px rgba(0, 0, 0, 0.6));
+    }
+
+    #newspaper-overlay.thrown {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(1) rotate(-8deg); 
+      opacity: 1;
+      filter: drop-shadow(3px 8px 10px rgba(0, 0, 0, 0.7));
+    }
+
+    /* Small hint text similar to other cutscenes */
+    .hint-text {
+      position: absolute;
+      bottom: 40px;
+      width: 100%;
+      text-align: center;
+      color: white;
+      font-size: 14px;
+      opacity: 0.5;
+      font-family: monospace;
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body>
 
-<div id="loading">Loading 3D Models...</div>
-<div id="blink-overlay"></div>
-<div id="instructions">W/A/S/D to Walk | Walk to the Table or Boards to investigate</div>
-
-<div id="joystick-zone">
-  <div id="joystick-stick"></div>
-</div>
-<div id="cutscene-table" class="cutscene-screen" title="Click to close table blueprint">
-    <img id="newspaper-overlay" src="image_90cdb7.png" alt="News Article" onerror="this.style.display='none'">
-</div>
-<div id="cutscene-board" class="cutscene-screen" title="Click to close board evidence"></div>
-<div id="cutscene-window" class="cutscene-screen" title="Click to step back from window">
-    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-family: monospace; font-size: 24px; text-align: center; letter-spacing: 2px;">
-        <span style="font-size: 14px; opacity: 0.5;"></span>
-    </div>
-</div>
-<div id="cutscene-cabinet" class="cutscene-screen" title="Click to step back from cabinet">
-    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-family: monospace; font-size: 24px; text-align: center; letter-spacing: 2px;">
-        <span style="font-size: 14px; opacity: 0.5;"></span>
-    </div>
-</div>
-
-    <!-- Newspaper Modal Overlay -->
+  <div id="cutscene-table" class="cutscene-screen" title="Click to dismiss">
+    <img id="newspaper-overlay" src="newspaper.png" alt="News Article" onerror="this.style.display='none'">
+    <div class="hint-text">(Click to dismiss)</div>
+  </div>
+  <!-- Newspaper Modal Overlay -->
     <div id="newspaperModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-500 ease-out p-4 font-serif text-[#1a2e1f] cursor-default">
         
         <button id="closeModalBtn" class="absolute top-6 right-8 text-[#e9e2d0]/50 hover:text-[#e9e2d0] text-5xl font-light z-[250] transition-colors duration-300">
@@ -117,16 +148,90 @@
             </button>
         </div>
     </div>
+  <script>
+    const newspaper = document.getElementById('newspaper-overlay');
 
-<video id="windowVideo" preload="auto" loop muted autoplay crossOrigin="anonymous" playsinline style="display: none;">
-  <source src="8623-212638552.mp4" type="video/mp4">
-</video>
-<video id="windowVideoRoom" preload="auto" loop muted autoplay crossOrigin="anonymous" playsinline style="display: none;">
-  <source src="12254166_3840_2160_60fps.mp4" type="video/mp4">
-</video>
+    // Trigger the "thrown" animation shortly after the page loads
+    setTimeout(() => {
+      newspaper.classList.add('thrown');
+    }, 600);
 
-<script type="module" src="main.js"></script>
+    // NEWSPAPER MODAL LOGIC
+    const newspaperModal = document.getElementById('newspaperModal');
+    const modalContent = document.getElementById('modalContent');
+    const flipPage = document.getElementById('flipPage');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+
+    let isFlipped = false;
+
+    const updateButtons = () => {
+        if (isFlipped) {
+            prevBtn.style.opacity = '1';
+            prevBtn.style.pointerEvents = 'auto';
+            nextBtn.style.opacity = '0.5';
+            nextBtn.style.pointerEvents = 'none';
+        } else {
+            prevBtn.style.opacity = '0.5';
+            prevBtn.style.pointerEvents = 'none';
+            nextBtn.style.opacity = '1';
+            nextBtn.style.pointerEvents = 'auto';
+        }
+    };
+
+    const turnPageNext = () => {
+        if (!isFlipped) {
+            flipPage.style.transform = 'rotateY(-180deg)';
+            isFlipped = true;
+            updateButtons();
+        }
+    };
+
+    const turnPagePrev = () => {
+        if (isFlipped) {
+            flipPage.style.transform = '';
+            isFlipped = false;
+            updateButtons();
+        }
+    };
+
+    // Make the newspaper overlay interactive
+    newspaper.style.pointerEvents = 'auto';
+    newspaper.style.cursor = 'pointer';
+
+    // Open Modal when the thrown newspaper is clicked
+    newspaper.addEventListener('click', (e) => {
+        e.stopPropagation();
+        newspaperModal.classList.remove('pointer-events-none', 'opacity-0');
+        newspaperModal.classList.add('opacity-100');
+        modalContent.classList.remove('scale-95');
+        modalContent.classList.add('scale-100');
+        updateButtons();
+    });
+
+    const closeModal = () => {
+        newspaperModal.classList.remove('opacity-100');
+        newspaperModal.classList.add('opacity-0', 'pointer-events-none');
+        modalContent.classList.remove('scale-100');
+        modalContent.classList.add('scale-95');
+        
+        setTimeout(() => {
+            turnPagePrev();
+        }, 500);
+    };
+
+    closeModalBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeModal();
+    });
+    nextBtn.addEventListener('click', (e) => { e.stopPropagation(); turnPageNext(); });
+    prevBtn.addEventListener('click', (e) => { e.stopPropagation(); turnPagePrev(); });
+    
+    flipPage.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isFlipped ? turnPagePrev() : turnPageNext();
+    });
+  </script>
 </body>
 </html>
-
-

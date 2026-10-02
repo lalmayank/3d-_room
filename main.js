@@ -577,6 +577,80 @@ document.getElementById('cutscene-table').addEventListener('click', function () 
   setTimeout(() => { cutsceneTableTriggered = false; }, 1000);
 });
 
+// NEWSPAPER MODAL LOGIC
+const newspaperOverlay = document.getElementById('newspaper-overlay');
+const newspaperModal = document.getElementById('newspaperModal');
+const modalContent = document.getElementById('modalContent');
+const flipPage = document.getElementById('flipPage');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const closeModalBtn = document.getElementById('closeModalBtn');
+
+let isFlipped = false;
+
+const updateButtons = () => {
+    if (isFlipped) {
+        prevBtn.style.opacity = '1';
+        prevBtn.style.pointerEvents = 'auto';
+        nextBtn.style.opacity = '0.5';
+        nextBtn.style.pointerEvents = 'none';
+    } else {
+        prevBtn.style.opacity = '0.5';
+        prevBtn.style.pointerEvents = 'none';
+        nextBtn.style.opacity = '1';
+        nextBtn.style.pointerEvents = 'auto';
+    }
+};
+
+const turnPageNext = () => {
+    if (!isFlipped) {
+        flipPage.style.transform = 'rotateY(-180deg)';
+        isFlipped = true;
+        updateButtons();
+    }
+};
+
+const turnPagePrev = () => {
+    if (isFlipped) {
+        flipPage.style.transform = '';
+        isFlipped = false;
+        updateButtons();
+    }
+};
+
+// Make the newspaper overlay interactive
+newspaperOverlay.style.pointerEvents = 'auto';
+newspaperOverlay.style.cursor = 'pointer';
+
+// Open Modal when the thrown newspaper is clicked
+newspaperOverlay.addEventListener('click', (e) => {
+    e.stopPropagation(); // Prevent the table cutscene from closing
+    newspaperModal.classList.remove('pointer-events-none', 'opacity-0');
+    newspaperModal.classList.add('opacity-100');
+    modalContent.classList.remove('scale-95');
+    modalContent.classList.add('scale-100');
+    updateButtons();
+});
+
+const closeModal = () => {
+    newspaperModal.classList.remove('opacity-100');
+    newspaperModal.classList.add('opacity-0', 'pointer-events-none');
+    modalContent.classList.remove('scale-100');
+    modalContent.classList.add('scale-95');
+    
+    setTimeout(() => {
+        turnPagePrev();
+    }, 500);
+};
+
+closeModalBtn.addEventListener('click', closeModal);
+nextBtn.addEventListener('click', turnPageNext);
+prevBtn.addEventListener('click', turnPagePrev);
+
+flipPage.addEventListener('click', () => {
+    isFlipped ? turnPagePrev() : turnPageNext();
+});
+
 document.getElementById('cutscene-board').addEventListener('click', function () {
   this.classList.remove('active');
   camera.position.set(-30, 0, 0);
