@@ -136,14 +136,14 @@
       overflow: hidden;
     }
 
-    #newspaper-overlay {
+    #newspaper-container {
       position: absolute;
       top: -50%;
       left: 150%; 
       transform: translate(-50%, -50%) scale(0.1) rotate(1080deg);
       width: 25vw; 
       min-width: 200px;
-      max-width: 400px;
+      max-width: 300px;
       opacity: 0;
       transition: all 1.2s cubic-bezier(0.22, 1, 0.36, 1);
       z-index: 105;
@@ -151,12 +151,52 @@
       filter: drop-shadow(15px 25px 15px rgba(0, 0, 0, 0.6));
     }
 
-    #newspaper-overlay.thrown {
+    #newspaper-container.thrown {
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%) scale(1) rotate(-8deg); 
+      transform: translate(-50%, -50%) scale(1.2) rotate(-2deg); 
       opacity: 1;
       filter: drop-shadow(3px 8px 10px rgba(0, 0, 0, 0.7));
+    }
+
+    #newspaper-folded {
+      width: 100%;
+      display: block;
+      transform-origin: center;
+    }
+
+    #newspaper-full {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scaleX(0) scaleY(0.9);
+      width: 220%;
+      opacity: 0;
+      transform-origin: center;
+      border-radius: 4px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+
+    #newspaper-container.thrown #newspaper-folded {
+      animation: hide-fold 0.4s forwards;
+      animation-delay: 1.2s;
+    }
+
+    #newspaper-container.thrown #newspaper-full {
+      animation: show-unfold 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation-delay: 1.4s;
+    }
+
+    @keyframes hide-fold {
+      0% { transform: scaleX(1); opacity: 1; }
+      99% { transform: scaleX(0); opacity: 1; }
+      100% { transform: scaleX(0); opacity: 0; }
+    }
+
+    @keyframes show-unfold {
+      0% { transform: translate(-50%, -50%) scaleX(0) scaleY(0.9); opacity: 0; }
+      10% { opacity: 1; }
+      100% { transform: translate(-50%, -50%) scaleX(1) scaleY(1); opacity: 1; }
     }
 
     #cutscene-board {

@@ -1795,7 +1795,7 @@ export function initThreeJS(mountElement) {
   
     document.getElementById('cutscene-table').addEventListener('click', function() {
       this.classList.remove('active');
-      document.getElementById('newspaper-overlay').classList.remove('thrown');
+      document.getElementById('newspaper-container').classList.remove('thrown');
       const startPos = camera.position.clone();
       const startTarget = controls.target.clone();
       const endPos = new THREE.Vector3(-1.5, 0, 0);
@@ -2010,13 +2010,13 @@ export function initThreeJS(mountElement) {
             tableCutsceneShown = true;
             document.getElementById('cutscene-table').classList.add('active');
             setTimeout(() => {
-              document.getElementById('newspaper-overlay').classList.add('thrown');
+              document.getElementById('newspaper-container').classList.add('thrown');
             }, 200);
           }
         }
   
-        // 6. TABLE CUTSCENE FOR 3 SECONDS & RAISE GAZE (30.5s - 34.5s)
-        else if (elapsed < 33.5) {
+        // 6. TABLE CUTSCENE FOR 6 SECONDS & RAISE GAZE (30.5s - 37.5s)
+        else if (elapsed < 36.5) {
           camera.position.set(-1.5, 0, 0);
           const lookDir = new THREE.Vector3().subVectors(tableFocusTarget, camera.position).normalize();
           controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
@@ -2024,46 +2024,46 @@ export function initThreeJS(mountElement) {
             tableCutsceneShown = true;
             document.getElementById('cutscene-table').classList.add('active');
             setTimeout(() => {
-              document.getElementById('newspaper-overlay').classList.add('thrown');
+              document.getElementById('newspaper-container').classList.add('thrown');
             }, 200);
           }
-        } else if (elapsed < 34.5) {
+        } else if (elapsed < 37.5) {
           // Transition back to normal view and raise gaze back to eye level
           if (!tableCutsceneHidden) {
             tableCutsceneHidden = true;
-            document.getElementById('newspaper-overlay').classList.remove('thrown');
+            document.getElementById('newspaper-container').classList.remove('thrown');
             document.getElementById('cutscene-table').classList.remove('active');
           }
           camera.position.set(-1.5, 0, 0);
-          let t = smoothStep((elapsed - 33.5) / 1.0);
+          let t = smoothStep((elapsed - 36.5) / 1.0);
           let straightTarget = new THREE.Vector3(-10.5, 0, 0);
           let targetLook = new THREE.Vector3().lerpVectors(tableFocusTarget, straightTarget, t);
           const lookDir = new THREE.Vector3().subVectors(targetLook, camera.position).normalize();
           controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
         }
   
-        // 7. STEP 7: TURN SOUTH & WALK CLOSER TO BOARD WITH EYES LOCKED ON BOARD (34.5s - 40.5s)
-        else if (elapsed < 35.5) {
+        // 7. STEP 7: TURN SOUTH & WALK CLOSER TO BOARD WITH EYES LOCKED ON BOARD (37.5s - 43.5s)
+        else if (elapsed < 38.5) {
           // 7A: Turn left 90 deg standing in place at table (facing south along +z towards board)
-          let t = smoothStep((elapsed - 34.5) / 1.0);
+          let t = smoothStep((elapsed - 37.5) / 1.0);
           let angle = (Math.PI / 2) + (t * (Math.PI / 2));
           camera.position.set(-1.5, 0, 0);
           let forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
           controls.target.copy(camera.position).addScaledVector(forward, 0.1);
-        } else if (elapsed < 39.5) {
+        } else if (elapsed < 42.5) {
           // 7B: Walk closer to the board (z: 0 -> 24, x: -1.5 -> -5) with eyes strictly locked on the board
-          let t = smoothStep((elapsed - 35.5) / 4.0);
+          let t = smoothStep((elapsed - 38.5) / 4.0);
           let curX = -1.5 - (t * 3.5);
           let curZ = t * 24;
-          let walkBob = Math.sin((elapsed - 35.5) * 8.5) * 0.16;
+          let walkBob = Math.sin((elapsed - 38.5) * 8.5) * 0.16;
           camera.position.set(curX, walkBob, curZ);
   
           const southBoardTarget = new THREE.Vector3(-15, 5.0, 42.5);
           const lookDir = new THREE.Vector3().subVectors(southBoardTarget, camera.position).normalize();
           controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
-        } else if (elapsed < 40.5) {
+        } else if (elapsed < 43.5) {
           // 7C: Pause 1s standing close at (-5, 0, 24) with eyes locked on the board
-          let t = smoothStep((elapsed - 39.5) / 1.0);
+          let t = smoothStep((elapsed - 42.5) / 1.0);
           let walkBob = Math.sin(4.0 * 8.5) * 0.16 * (1 - t);
           camera.position.set(-5, walkBob, 24);
           const southBoardTarget = new THREE.Vector3(-15, 5.0, 42.5);
@@ -2071,8 +2071,8 @@ export function initThreeJS(mountElement) {
           controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
         }
   
-        // 8. BOARD CUTSCENE FOR 3 SECONDS (40.5s - 43.5s)
-        else if (elapsed < 43.5) {
+        // 8. BOARD CUTSCENE FOR 3 SECONDS (43.5s - 46.5s)
+        else if (elapsed < 46.5) {
           camera.position.set(-5, 0, 24);
           const southBoardTarget = new THREE.Vector3(-15, 5.0, 42.5);
           const lookDir = new THREE.Vector3().subVectors(southBoardTarget, camera.position).normalize();
@@ -2082,13 +2082,13 @@ export function initThreeJS(mountElement) {
             document.getElementById('cutscene-board').classList.add('active');
           }
         }
-        // 9. CLOSE BOARD CUTSCENE & TURN TO FILE CABINET (43.5s - 44.5s)
-        else if (elapsed < 44.5) {
+        // 9. CLOSE BOARD CUTSCENE & TURN TO FILE CABINET (46.5s - 47.5s)
+        else if (elapsed < 47.5) {
           if (!window.boardCutsceneHidden) {
             window.boardCutsceneHidden = true;
             document.getElementById('cutscene-board').classList.remove('active');
           }
-          let t = smoothStep((elapsed - 43.5) / 1.0);
+          let t = smoothStep((elapsed - 46.5) / 1.0);
           camera.position.set(-5, 0, 24);
           const startTarget = new THREE.Vector3(-15, 5.0, 42.5);
           const endTarget = new THREE.Vector3(-45, 0, 35);
@@ -2096,43 +2096,137 @@ export function initThreeJS(mountElement) {
           const lookDir = new THREE.Vector3().subVectors(currentTarget, camera.position).normalize();
           controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
         }
-        // 10. WALK TO FILE CABINET (44.5s - 48.5s)
-        else if (elapsed < 48.5) {
-          let t = smoothStep((elapsed - 44.5) / 4.0);
+        // 10. WALK TO FILE CABINET (47.5s - 51.5s)
+        else if (elapsed < 51.5) {
+          let t = smoothStep((elapsed - 47.5) / 4.0);
           let curX = -5 - (t * 30);
           let curZ = 24 + (t * 11);
-          let walkBob = Math.sin((elapsed - 44.5) * 8.5) * 0.16;
+          let walkBob = Math.sin((elapsed - 47.5) * 8.5) * 0.16;
           camera.position.set(curX, walkBob, curZ);
           const cabinetTarget = new THREE.Vector3(-45, 0, 35);
           const lookDir = new THREE.Vector3().subVectors(cabinetTarget, camera.position).normalize();
           controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
         }
-        // 11. PAUSE AT FILE CABINET (48.5s - 49.5s)
-        else if (elapsed < 49.5) {
-          let t = smoothStep((elapsed - 48.5) / 1.0);
+        // 11. PAUSE AT FILE CABINET (51.5s - 52.5s)
+        else if (elapsed < 52.5) {
+          let t = smoothStep((elapsed - 51.5) / 1.0);
           let walkBob = Math.sin(4.0 * 8.5) * 0.16 * (1 - t);
           camera.position.set(-35, walkBob, 35);
           const cabinetTarget = new THREE.Vector3(-45, 0, 35);
           const lookDir = new THREE.Vector3().subVectors(cabinetTarget, camera.position).normalize();
           controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
         }
-        // 12. END INTRO AND TRIGGER CABINET CUTSCENE (49.5s+)
-        else {
+        // 12. CABINET CUTSCENE FOR 3 SECONDS (52.5s - 55.5s)
+        else if (elapsed < 55.5) {
           camera.position.set(-35, 0, 35);
           const cabinetTarget = new THREE.Vector3(-45, 0, 35);
           const lookDir = new THREE.Vector3().subVectors(cabinetTarget, camera.position).normalize();
+          controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+          if (!cabinetCutsceneShown) {
+            cabinetCutsceneShown = true;
+            document.getElementById('cutscene-cabinet').classList.add('active');
+          }
+        }
+        // 13. CLOSE CABINET CUTSCENE & TURN TO NAVIGATE (55.5s - 56.5s)
+        else if (elapsed < 56.5) {
+          if (!window.cabinetCutsceneHidden) {
+            window.cabinetCutsceneHidden = true;
+            document.getElementById('cutscene-cabinet').classList.remove('active');
+          }
+          let t = smoothStep((elapsed - 55.5) / 1.0);
+          camera.position.set(-35, 0, 35);
+          const startTarget = new THREE.Vector3(-45, 0, 35);
+          const endTarget = new THREE.Vector3(-30, 0, 28);
+          const currentTarget = new THREE.Vector3().lerpVectors(startTarget, endTarget, t);
+          const lookDir = new THREE.Vector3().subVectors(currentTarget, camera.position).normalize();
+          controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+        }
+        // 14. WALK CLEAR OF BOOKSHELF (56.5s - 58.0s)
+        else if (elapsed < 58.0) {
+          let t = smoothStep((elapsed - 56.5) / 1.5);
+          let curX = -35 + (t * 5); // to -30
+          let curZ = 35 - (t * 7);  // to 28
+          let walkBob = Math.sin((elapsed - 56.5) * 8.5) * 0.16;
+          camera.position.set(curX, walkBob, curZ);
+          
+          const currentTarget = new THREE.Vector3(-30, 0, -25);
+          const lookDir = new THREE.Vector3().subVectors(currentTarget, camera.position).normalize();
+          controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+        }
+        // 15. WALK DOWN SAFE CORRIDOR (58.0s - 64.5s)
+        else if (elapsed < 64.5) {
+          let t = smoothStep((elapsed - 58.0) / 6.5);
+          let curZ = 28 - (t * 53); // to -25
+          let walkBob = Math.sin((elapsed - 58.0) * 8.5) * 0.16;
+          camera.position.set(-30, walkBob, curZ);
+          
+          const endTarget = new THREE.Vector3(-15, 5, -42.4);
+          const currentTarget = new THREE.Vector3(-30, 0, -40).lerp(endTarget, t * 0.5); 
+          const lookDir = new THREE.Vector3().subVectors(currentTarget, camera.position).normalize();
+          controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+        }
+        // 16. WALK TO WINDOW VIEW POINT (64.5s - 66.5s)
+        else if (elapsed < 66.5) {
+          let t = smoothStep((elapsed - 64.5) / 2.0);
+          let curX = -30 + (t * 15); // to -15
+          let walkBob = Math.sin((elapsed - 64.5) * 8.5) * 0.16;
+          camera.position.set(curX, walkBob, -25);
+          
+          const windowTarget = new THREE.Vector3(-15, 5, -42.4);
+          const lookDir = new THREE.Vector3().subVectors(windowTarget, camera.position).normalize();
+          controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+        }
+        // 17. PAUSE AT WINDOW (66.5s - 67.5s)
+        else if (elapsed < 67.5) {
+          let t = smoothStep((elapsed - 66.5) / 1.0);
+          let walkBob = Math.sin(2.0 * 8.5) * 0.16 * (1 - t);
+          camera.position.set(-15, walkBob, -25);
+          const windowTarget = new THREE.Vector3(-15, 5, -42.4);
+          const lookDir = new THREE.Vector3().subVectors(windowTarget, camera.position).normalize();
+          controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+        }
+        // 18. END INTRO AND TRIGGER WINDOW CUTSCENE (67.5s+)
+        else {
+          camera.position.set(-15, 0, -25);
+          const windowTarget = new THREE.Vector3(-15, 5, -42.4);
+          const lookDir = new THREE.Vector3().subVectors(windowTarget, camera.position).normalize();
           controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
           if (blink) {
             blink.style.display = 'none';
             blink.style.opacity = '0';
           }
-          if (!cabinetCutsceneShown) {
-            cabinetCutsceneShown = true;
-            document.getElementById('cutscene-cabinet').classList.add('active');
+          if (!window.windowCutsceneShown) {
+            window.windowCutsceneShown = true;
+            document.getElementById('cutscene-window').classList.add('active');
+            cutsceneWindowTriggered = true;
             cutsceneCabinetTriggered = true;
             cutsceneBoardTriggered = true;
             cutsceneTableTriggered = true;
+            
+            const cutsceneVid = document.getElementById('cutscene-window-player');
+            if (cutsceneVid) {
+              cutsceneVid.muted = true;
+              cutsceneVid.defaultMuted = true;
+              cutsceneVid.playsInline = true;
+              if (video2 && video2.currentTime) {
+                if (cutsceneVid.readyState >= 1) {
+                  cutsceneVid.currentTime = video2.currentTime;
+                } else {
+                  cutsceneVid.addEventListener('loadedmetadata', () => {
+                    if (video2 && video2.currentTime) {
+                      cutsceneVid.currentTime = video2.currentTime;
+                    }
+                  }, { once: true });
+                }
+              }
+              cutsceneVid.play().catch(() => {});
+            }
+            if (video2 && video2.paused) {
+              video2.play().catch(() => {});
+            }
+
             setTimeout(() => {
+              cutsceneWindowTriggered = false;
               cutsceneCabinetTriggered = false;
               cutsceneBoardTriggered = false;
               cutsceneTableTriggered = false;
@@ -2203,7 +2297,7 @@ export function initThreeJS(mountElement) {
         if (isNearTable) {
           cutsceneTableTriggered = true;
           document.getElementById('cutscene-table').classList.add('active');
-          setTimeout(() => { document.getElementById('newspaper-overlay').classList.add('thrown'); }, 600); 
+          setTimeout(() => { document.getElementById('newspaper-container').classList.add('thrown'); }, 600); 
         }
       }
   

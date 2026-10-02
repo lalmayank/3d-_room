@@ -31,7 +31,10 @@ export default function UI() {
   <div id="joystick-stick"></div>
 </div>
 <div id="cutscene-table" className="cutscene-screen" title="Click to close table blueprint">
-    <img id="newspaper-overlay" src="/newspaper.png" alt="News Article" />
+    <div id="newspaper-container">
+      <img id="newspaper-folded" src="/newspaper.png" alt="News Article" />
+      <img id="newspaper-full" src="/Full_newspaper.jpeg" alt="Full News Article" />
+    </div>
 </div>
 <div id="cutscene-board" className="cutscene-screen" title="Click to close board evidence"></div>
 <div id="cutscene-window" className="cutscene-screen" title="Click to step back from window">
