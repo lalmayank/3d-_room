@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 export function initThreeJS(mountElement) {
   let reqId = null;
@@ -96,29 +97,67 @@ export function initThreeJS(mountElement) {
     scene.add(sun2.target);
   
     let playVideos = () => {};
+    
+    // Configure DRACOLoader for optimized geometry decompression
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+
+    // --- PROGRESSIVE STAGED ASSET LOADING ---
+    // Stage 1: Core Room Shell (Walls, Floor, Master Table, Chairs) ~15MB total -> Loads in <2s!
+    let stage1Loaded = 0;
+    const stage1Total = 3;
+    let isStage1Done = false;
+
+    function onStage1ModelLoaded() {
+      stage1Loaded++;
+      const barFill = document.getElementById('loading-bar-fill');
+      const statusEl = document.getElementById('loading-status');
+      const pct = Math.min(Math.round((stage1Loaded / stage1Total) * 100), 100);
+      
+      if (barFill) barFill.style.transform = `scaleX(${pct / 100})`;
+      if (statusEl) statusEl.innerText = `Preparing Cellar... ${pct}%`;
+
+      if (stage1Loaded >= stage1Total && !isStage1Done) {
+        isStage1Done = true;
+        const loadingContainer = document.getElementById('loading-container');
+        if (loadingContainer) {
+          if (statusEl) statusEl.innerText = 'Entering Cellar...';
+          setTimeout(() => {
+            loadingContainer.classList.add('fade-out');
+          }, 300);
+        }
+        if (!introStartTime) introStartTime = performance.now();
+        playVideos();
+      }
+    }
+
     const manager = new THREE.LoadingManager();
     manager.onProgress = function (url, itemsLoaded, itemsTotal) {
-      const loadingEl = document.getElementById('loading');
-      if (loadingEl) {
-        const percentage = Math.round((itemsLoaded / 8) * 100);
-        loadingEl.innerText = `Loading Assets... ${Math.min(percentage, 100)}%`;
+      if (!isStage1Done) {
+        const barFill = document.getElementById('loading-bar-fill');
+        const statusEl = document.getElementById('loading-status');
+        const percentage = Math.min(Math.round((itemsLoaded / 8) * 100), 100);
+        if (barFill) barFill.style.transform = `scaleX(${percentage / 100})`;
+        if (statusEl) statusEl.innerText = `Loading Assets... ${percentage}%`;
       }
     };
     manager.onLoad = function () {
-      const loadingEl = document.getElementById('loading');
-      if (loadingEl && !loadingEl.classList.contains('fade-out')) {
-        loadingEl.innerText = 'Initializing Environment...';
-        loadingEl.classList.add('fade-out');
-        setTimeout(() => { loadingEl.style.display = 'none'; }, 1500);
+      if (!isStage1Done) {
+        isStage1Done = true;
+        const loadingContainer = document.getElementById('loading-container');
+        if (loadingContainer) {
+          loadingContainer.classList.add('fade-out');
+        }
+        if (!introStartTime) introStartTime = performance.now(); 
+        playVideos();
       }
-      if (!introStartTime) introStartTime = performance.now(); 
-      playVideos();
     };
     manager.onError = function (url) {
       console.error("MODEL LOAD ERROR:", url);
     };
     
     const loader = new GLTFLoader(manager);
+    loader.setDRACOLoader(dracoLoader);
     
     // Handled automatically by LoadingManager now, leaving dummy functions to not break the rest of the file
     let modelsLoaded = 0;
@@ -274,6 +313,7 @@ export function initThreeJS(mountElement) {
           });
         }
         checkLoad();
+        onStage1ModelLoaded();
     }, undefined, handleLoadError);
   
     loader.load('table.glb', function (gltf) {
@@ -284,6 +324,7 @@ export function initThreeJS(mountElement) {
         table.scale.set(4, 4, 4); 
         scene.add(table);
         checkLoad();
+        onStage1ModelLoaded();
     }, undefined, handleLoadError);
   
     // --- MASTERMIND COUNCIL RUG (Under Table & Chairs) ---
@@ -540,6 +581,7 @@ export function initThreeJS(mountElement) {
         scene.add(chair3);
   
         checkLoad();
+        onStage1ModelLoaded();
     }, undefined, handleLoadError);
   
     loader.load('bucket_bench_19th_century.glb', function (gltf) {
@@ -679,6 +721,13 @@ export function initThreeJS(mountElement) {
     tex2.minFilter = THREE.LinearFilter;
     tex2.magFilter = THREE.LinearFilter;
     tex2.generateMipmaps = false;
+
+    const cutscenePlayer = document.getElementById('cutscene-window-player');
+    if (cutscenePlayer) {
+      cutscenePlayer.muted = true;
+      cutscenePlayer.defaultMuted = true;
+      cutscenePlayer.playsInline = true;
+    }
   
     const canvas1Shadow = document.createElement('canvas');
     canvas1Shadow.width = 854;
@@ -1738,6 +1787,8 @@ export function initThreeJS(mountElement) {
   
     document.getElementById('cutscene-window').addEventListener('click', function() {
       this.classList.remove('active');
+      const cutsceneVid = document.getElementById('cutscene-window-player');
+      if (cutsceneVid) cutsceneVid.pause();
       smoothCameraReturn(new THREE.Vector3(-15, 0, -25), 800);
       setTimeout(() => { cutsceneWindowTriggered = false; controls.enabled = true; }, 1000);
     });
@@ -2110,10 +2161,32 @@ export function initThreeJS(mountElement) {
   
       if (canTriggerCutscene) {
         const isNearWindow = camera.position.x > -25 && camera.position.x < -5 && 
-                             camera.position.z < -30;
+                             camera.position.z < -34;
         if (isNearWindow) {
           cutsceneWindowTriggered = true;
-          document.getElementById('cutscene-window').classList.add('active');
+          const cutsceneWindow = document.getElementById('cutscene-window');
+          if (cutsceneWindow) cutsceneWindow.classList.add('active');
+          const cutsceneVid = document.getElementById('cutscene-window-player');
+          if (cutsceneVid) {
+            cutsceneVid.muted = true;
+            cutsceneVid.defaultMuted = true;
+            cutsceneVid.playsInline = true;
+            if (video2 && video2.currentTime) {
+              if (cutsceneVid.readyState >= 1) {
+                cutsceneVid.currentTime = video2.currentTime;
+              } else {
+                cutsceneVid.addEventListener('loadedmetadata', () => {
+                  if (video2 && video2.currentTime) {
+                    cutsceneVid.currentTime = video2.currentTime;
+                  }
+                }, { once: true });
+              }
+            }
+            cutsceneVid.play().catch(err => console.warn('Cutscene video play blocked:', err));
+          }
+          if (video2 && video2.paused) {
+            video2.play().catch(() => {});
+          }
         }
       }
   

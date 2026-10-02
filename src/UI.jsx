@@ -5,7 +5,15 @@ export default function UI() {
     <>
 
 
-<div id="loading">Loading 3D Models...</div>
+<div id="loading-container">
+  <div id="loading-badge">ACM Council Experience</div>
+  <h1 id="loading-title">Secret Heist Cellar</h1>
+  <div id="loading-bar-track">
+    <div id="loading-bar-fill"></div>
+  </div>
+  <div id="loading-status">Loading Assets...</div>
+  <div id="loading" style={{ display: 'none' }}></div>
+</div>
 <div id="blink-overlay"></div>
 <div id="controls-help">
   <div className="control-row">
@@ -23,13 +31,42 @@ export default function UI() {
   <div id="joystick-stick"></div>
 </div>
 <div id="cutscene-table" className="cutscene-screen" title="Click to close table blueprint">
-    <img id="newspaper-overlay" src="image.png" alt="News Article" />
+    <img id="newspaper-overlay" src="/image.png" alt="News Article" />
 </div>
 <div id="cutscene-board" className="cutscene-screen" title="Click to close board evidence"></div>
 <div id="cutscene-window" className="cutscene-screen" title="Click to step back from window">
-    <div style={{position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'white', fontFamily: 'monospace', fontSize: '24px', textAlign: 'center', letterSpacing: '2px'}}>
-        <span style={{fontSize: '14px', opacity: '0.5'}}></span>
-    </div>
+  <video 
+    id="cutscene-window-player"
+    src="/videos/12254166_3840_2160_60fps.mp4"
+    preload="auto"
+    loop 
+    muted 
+    playsInline 
+    crossOrigin="anonymous"
+    style={{
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover'
+    }}
+  />
+  <div style={{
+    position: 'absolute',
+    bottom: '30px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    background: 'rgba(0, 0, 0, 0.65)',
+    backdropFilter: 'blur(8px)',
+    padding: '10px 24px',
+    borderRadius: '20px',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    color: 'white',
+    fontFamily: 'sans-serif',
+    fontSize: '14px',
+    letterSpacing: '1px',
+    pointerEvents: 'none'
+  }}>
+    Click anywhere to step back
+  </div>
 </div>
 <div id="cutscene-cabinet" className="cutscene-screen" title="Click to step back from cabinet">
     <div style={{position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'white', fontFamily: 'monospace', fontSize: '24px', textAlign: 'center', letterSpacing: '2px'}}>
@@ -40,7 +77,7 @@ export default function UI() {
 <video 
   id="windowVideo" 
   src="/videos/8623-212638552.mp4" 
-  preload="metadata" 
+  preload="auto" 
   loop 
   muted 
   playsInline 
@@ -50,7 +87,7 @@ export default function UI() {
 <video 
   id="windowVideoRoom" 
   src="/videos/12254166_3840_2160_60fps.mp4" 
-  preload="metadata" 
+  preload="auto" 
   loop 
   muted 
   playsInline 
