@@ -1,4 +1,6 @@
 import React from 'react';
+import { BoardBackground } from './components/investigation/BoardBackground';
+import { CabinetDossier } from './components/archive/CabinetDossier';
 
 export default function UI() {
   return (
@@ -15,6 +17,14 @@ export default function UI() {
         <div id="loading" style={{ display: 'none' }}></div>
       </div>
       <div id="blink-overlay"></div>
+      <button
+        id="skip-intro-btn"
+        onClick={() => { if (window.skipIntroTour) window.skipIntroTour(); }}
+        className="fixed top-6 right-6 z-[95] bg-black/60 hover:bg-black/90 text-white/90 hover:text-white font-mono text-xs tracking-widest px-4 py-2 rounded-full border border-white/20 transition-all hover:scale-105 shadow-lg flex items-center gap-1.5"
+      >
+        <span>SKIP TOUR</span>
+        <span>&#10148;</span>
+      </button>
       <div id="controls-help" className="hidden-controls">
         <div className="control-row">
           <div className="wasd-cluster">
@@ -36,7 +46,15 @@ export default function UI() {
           <img id="newspaper-full" src="/Full_newspaper.jpeg" alt="Full News Article" />
         </div>
       </div>
-      <div id="cutscene-board" className="cutscene-screen" title="Click to close board evidence"></div>
+      <div id="cutscene-board" className="cutscene-screen">
+        <BoardBackground onClose={() => {
+          if (window.closeBoardCutscene) window.closeBoardCutscene();
+          else {
+            const el = document.getElementById('cutscene-board');
+            if (el) el.classList.remove('active');
+          }
+        }} />
+      </div>
       <div id="cutscene-window" className="cutscene-screen" title="Click to step back from window">
         <video
           id="windowVideoRoom"
@@ -85,10 +103,14 @@ export default function UI() {
           Click anywhere to step back
         </div>
       </div>
-      <div id="cutscene-cabinet" className="cutscene-screen" title="Click to step back from cabinet">
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'white', fontFamily: 'monospace', fontSize: '24px', textAlign: 'center', letterSpacing: '2px' }}>
-          <span style={{ fontSize: '14px', opacity: '0.5' }}></span>
-        </div>
+      <div id="cutscene-cabinet" className="cutscene-screen">
+        <CabinetDossier onClose={() => {
+          if (window.closeCabinetCutscene) window.closeCabinetCutscene();
+          else {
+            const el = document.getElementById('cutscene-cabinet');
+            if (el) el.classList.remove('active');
+          }
+        }} />
       </div>
 
       <video

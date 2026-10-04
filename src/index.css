@@ -199,11 +199,10 @@
       100% { transform: translate(-50%, -50%) scaleX(1) scaleY(1); opacity: 1; }
     }
 
-    #cutscene-board {
-      background-image: url('/board.jpeg');
-      background-size: contain;
-      background-position: center;
-      background-repeat: no-repeat;
+    #cutscene-board,
+    #cutscene-cabinet {
+      background-color: #050505;
+      overflow: hidden;
     }
 
     #cutscene-window {
