@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 export function initThreeJS(mountElement) {
   let reqId = null;
@@ -203,6 +204,7 @@ export function initThreeJS(mountElement) {
     
     const loader = new GLTFLoader(manager);
     loader.setDRACOLoader(dracoLoader);
+    loader.setMeshoptDecoder(MeshoptDecoder);
     
     // Handled automatically by LoadingManager now, leaving dummy functions to not break the rest of the file
     let modelsLoaded = 0;
