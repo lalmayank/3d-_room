@@ -1825,15 +1825,63 @@ export function initThreeJS(mountElement) {
       };
       controls.enabled = false;
     }
-  
     window.closeCabinetCutscene = function() {
       const el = document.getElementById('cutscene-cabinet');
       if (el && el.classList.contains('active')) {
         el.classList.remove('active');
-        smoothCameraReturn(new THREE.Vector3(-35, 0, 35), 800);
-        setTimeout(() => { cutsceneCabinetTriggered = false; controls.enabled = true; }, 1000);
+        
+        if (!isIntroRunning) {
+          const animDuration = 1.0;
+          let drawerWorldPos = new THREE.Vector3(-45, 0, 35);
+          if (window.cabinetTargetDrawer) window.cabinetTargetDrawer.getWorldPosition(drawerWorldPos);
+          
+          const startDrawerZ = window.cabinetTargetDrawer ? window.cabinetTargetDrawer.position.z : 0;
+          const startFolderPos = window.cabinetFolderWrapper ? window.cabinetFolderWrapper.position.clone() : new THREE.Vector3();
+          
+          const startCameraPos = camera.position.clone();
+          const startTarget = controls.target.clone();
+          
+          // Determine side for gameplay return - assume returning to -45, 0, 25
+          const endCameraPos = new THREE.Vector3(-45, 0, 25);
+          const endTarget = new THREE.Vector3(-45, 0, 35);
+
+          activeCameraAnimation = {
+              elapsed: 0,
+              duration: animDuration,
+              update: function(dt) {
+                 this.elapsed += dt;
+                 let t = Math.min(this.elapsed / this.duration, 1.0);
+                 let easeT = smoothStep(t);
+                 
+                 // Camera return
+                 camera.position.lerpVectors(startCameraPos, endCameraPos, easeT);
+                 const currentTarget = new THREE.Vector3().lerpVectors(startTarget, endTarget, easeT);
+                 const lookDir = new THREE.Vector3().subVectors(currentTarget, camera.position).normalize();
+                 controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+                 
+                 if (window.cabinetTargetDrawer && window.cabinetFolderWrapper) {
+                     window.cabinetTargetDrawer.position.z = startDrawerZ - (startDrawerZ - window.cabinetTargetDrawerStartZ) * easeT;
+                     
+                     const endFolderPos = drawerWorldPos.clone(); endFolderPos.y += 1.0;
+                     const folderPos = new THREE.Vector3().lerpVectors(startFolderPos, endFolderPos, easeT);
+                     window.cabinetFolderWrapper.position.copy(folderPos);
+                     window.cabinetFolderWrapper.rotation.y = Math.PI / 6 + ((1 - easeT) * Math.PI * 2);
+                     window.cabinetFolderWrapper.rotation.x = (1 - easeT) * Math.PI / 4;
+                     
+                     if (easeT > 0.95) window.cabinetFolderWrapper.visible = false;
+                 }
+
+                 if (t >= 1.0) {
+                   cutsceneCabinetTriggered = false; 
+                   controls.enabled = true;
+                   activeCameraAnimation = null;
+                 }
+              }
+          };
+        }
       }
     };
+
 
     window.closeBoardCutscene = function() {
       const el = document.getElementById('cutscene-board');
@@ -2215,74 +2263,134 @@ export function initThreeJS(mountElement) {
         // 9. WALK TO FILE CABINET (38.5s - 42.5s)
         else if (elapsed < 42.5) {
           let t = smoothStep((elapsed - 38.5) / 4.0);
-          let curX = -5 - (t * 30);
-          let curZ = 24 + (t * 11);
+          let curX = -5 - (t * 40); // to -45 (Right side of cabinet, facing window)
+          let curZ = 24 + (t * 1);  // to 25
           let walkBob = Math.sin((elapsed - 38.5) * 8.5) * 0.16;
           camera.position.set(curX, walkBob, curZ);
           const cabinetTarget = new THREE.Vector3(-45, 0, 35);
           const lookDir = new THREE.Vector3().subVectors(cabinetTarget, camera.position).normalize();
           controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
         }
-        // 10. PAUSE AT FILE CABINET & OPEN CABINET CUTSCENE (42.5s - 43.5s)
-        else if (elapsed < 43.5) {
-          let t = smoothStep((elapsed - 42.5) / 1.0);
-          let walkBob = Math.sin(4.0 * 8.5) * 0.16 * (1 - t);
-          camera.position.set(-35, walkBob, 35);
-          const cabinetTarget = new THREE.Vector3(-45, 0, 35);
-          const lookDir = new THREE.Vector3().subVectors(cabinetTarget, camera.position).normalize();
+        // 10. PAUSE AT FILE CABINET, OPEN DRAWER & CUTSCENE (42.5s - 44.0s)
+        else if (elapsed < 44.0) {
+          let t = smoothStep((elapsed - 42.5) / 1.5);
+          let walkBob = Math.sin(4.0 * 8.5) * 0.16 * (1 - smoothStep(t*2.0));
+          camera.position.set(-45, walkBob, 25);
+          
+          const straightTarget = new THREE.Vector3(-45, 0, 35);
+          const drawerTarget = new THREE.Vector3(-45, -3.0, 35); 
+          const currentTarget = new THREE.Vector3().lerpVectors(straightTarget, drawerTarget, t);
+          const lookDir = new THREE.Vector3().subVectors(currentTarget, camera.position).normalize();
           controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
 
-          if (!cabinetCutsceneShown) {
+          // Animate Drawer Slide & Folder Flyout
+          if (window.cabinetTargetDrawer && window.cabinetFolderWrapper) {
+              window.cabinetFolderWrapper.visible = true;
+              let depth = 3.0; // Estimate
+              if (window.cabinetTargetDrawer.geometry.boundingBox) {
+                  depth = window.cabinetTargetDrawer.geometry.boundingBox.max.z - window.cabinetTargetDrawer.geometry.boundingBox.min.z;
+              }
+              window.cabinetTargetDrawer.position.z = window.cabinetTargetDrawerStartZ + (depth * 0.9 * t);
+              
+              const drawerWorldPos = new THREE.Vector3();
+              window.cabinetTargetDrawer.getWorldPosition(drawerWorldPos);
+              
+              const startFolderPos = drawerWorldPos.clone();
+              startFolderPos.y += 1.0; 
+              
+              const endFolderPos = new THREE.Vector3(-45, -0.5, 27);
+              const folderPos = new THREE.Vector3().lerpVectors(startFolderPos, endFolderPos, Math.pow(t, 2)); 
+              window.cabinetFolderWrapper.position.copy(folderPos);
+              
+              window.cabinetFolderWrapper.rotation.y = Math.PI / 6 + (t * Math.PI * 2);
+              window.cabinetFolderWrapper.rotation.x = t * Math.PI / 4;
+          }
+
+          // Trigger just before animation ends to avoid frame skip issues
+          if (!cabinetCutsceneShown && elapsed > 43.8) {
             cabinetCutsceneShown = true;
             document.getElementById('cutscene-cabinet').classList.add('active');
           }
         }
-        // 11. TURN TO NAVIGATE AFTER CABINET CUTSCENE IS CLOSED BY USER (43.5s - 44.5s)
-        else if (elapsed < 44.5) {
-          let t = smoothStep((elapsed - 43.5) / 1.0);
-          camera.position.set(-35, 0, 35);
+        // 10.5. REVERSE ANIMATION AFTER CUTSCENE (44.0s - 45.0s)
+        else if (elapsed < 45.0) {
+          if (!cabinetCutsceneShown) {
+             cabinetCutsceneShown = true;
+             document.getElementById('cutscene-cabinet').classList.add('active');
+             
+             // Snap to final state just in case
+             if (window.cabinetTargetDrawer && window.cabinetFolderWrapper) {
+                 window.cabinetFolderWrapper.visible = true;
+                 let depth = 3.0;
+                 if (window.cabinetTargetDrawer.geometry.boundingBox) {
+                     depth = window.cabinetTargetDrawer.geometry.boundingBox.max.z - window.cabinetTargetDrawer.geometry.boundingBox.min.z;
+                 }
+                 window.cabinetTargetDrawer.position.z = window.cabinetTargetDrawerStartZ + (depth * 0.9);
+                 window.cabinetFolderWrapper.position.set(-45, -0.5, 27);
+                 window.cabinetFolderWrapper.rotation.y = Math.PI / 6 + Math.PI * 2;
+                 window.cabinetFolderWrapper.rotation.x = Math.PI / 4;
+             }
+             const drawerTarget = new THREE.Vector3(-45, -3.0, 35);
+             const lookDir = new THREE.Vector3().subVectors(drawerTarget, camera.position).normalize();
+             controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+          } else {
+             let t = smoothStep((elapsed - 44.0) / 1.0);
+             camera.position.set(-45, 0, 25);
+             
+             const startTarget = new THREE.Vector3(-45, -3.0, 35); 
+             const endTarget = new THREE.Vector3(-45, 0, 35);
+             const currentTarget = new THREE.Vector3().lerpVectors(startTarget, endTarget, t);
+             const lookDir = new THREE.Vector3().subVectors(currentTarget, camera.position).normalize();
+             controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+
+             // Reverse Drawer & Folder
+             if (window.cabinetTargetDrawer && window.cabinetFolderWrapper) {
+                 let depth = 3.0; 
+                 if (window.cabinetTargetDrawer.geometry.boundingBox) {
+                     depth = window.cabinetTargetDrawer.geometry.boundingBox.max.z - window.cabinetTargetDrawer.geometry.boundingBox.min.z;
+                 }
+                 window.cabinetTargetDrawer.position.z = window.cabinetTargetDrawerStartZ + (depth * 0.9 * (1 - t));
+                 
+                 const drawerWorldPos = new THREE.Vector3();
+                 window.cabinetTargetDrawer.getWorldPosition(drawerWorldPos);
+                 
+                 const startFolderPos = new THREE.Vector3(-45, -0.5, 27);
+                 const endFolderPos = drawerWorldPos.clone();
+                 endFolderPos.y += 1.0;
+                 
+                 const folderPos = new THREE.Vector3().lerpVectors(startFolderPos, endFolderPos, t);
+                 window.cabinetFolderWrapper.position.copy(folderPos);
+                 
+                 window.cabinetFolderWrapper.rotation.y = Math.PI / 6 + ((1 - t) * Math.PI * 2);
+                 window.cabinetFolderWrapper.rotation.x = (1 - t) * Math.PI / 4;
+                 
+                 if (t > 0.95) window.cabinetFolderWrapper.visible = false;
+             }
+          }
+        }
+        // 11. TURN TO NAVIGATE AFTER CABINET CUTSCENE IS CLOSED BY USER (45.0s - 46.0s)
+        else if (elapsed < 46.0) {
+          let t = smoothStep((elapsed - 45.0) / 1.0);
+          camera.position.set(-45, 0, 25);
           const startTarget = new THREE.Vector3(-45, 0, 35);
-          const endTarget = new THREE.Vector3(-30, 0, 28);
+          const endTarget = new THREE.Vector3(-15, 5, -42.4); // Look directly at the window!
           const currentTarget = new THREE.Vector3().lerpVectors(startTarget, endTarget, t);
           const lookDir = new THREE.Vector3().subVectors(currentTarget, camera.position).normalize();
           controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
         }
-        // 12. WALK CLEAR OF BOOKSHELF (44.5s - 46.0s)
-        else if (elapsed < 46.0) {
-          let t = smoothStep((elapsed - 44.5) / 1.5);
-          let curX = -35 + (t * 5); // to -30
-          let curZ = 35 - (t * 7);  // to 28
-          let walkBob = Math.sin((elapsed - 44.5) * 8.5) * 0.16;
+        // 12. WALK STRAIGHT TO THE WINDOW VIEW POINT (46.0s - 56.0s)
+        else if (elapsed < 56.0) {
+          let t = smoothStep((elapsed - 46.0) / 10.0);
+          let curX = -45 + (t * 30); // from -45 to -15
+          let curZ = 25 - (t * 50);  // from 25 to -25
+          let walkBob = Math.sin((elapsed - 46.0) * 8.5) * 0.16;
           camera.position.set(curX, walkBob, curZ);
           
-          const currentTarget = new THREE.Vector3(-30, 0, -25);
+          const currentTarget = new THREE.Vector3(-15, 5, -42.4);
           const lookDir = new THREE.Vector3().subVectors(currentTarget, camera.position).normalize();
           controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
         }
-        // 13. WALK DOWN SAFE CORRIDOR (46.0s - 52.5s)
-        else if (elapsed < 52.5) {
-          let t = smoothStep((elapsed - 46.0) / 6.5);
-          let curZ = 28 - (t * 53); // to -25
-          let walkBob = Math.sin((elapsed - 46.0) * 8.5) * 0.16;
-          camera.position.set(-30, walkBob, curZ);
-          
-          const endTarget = new THREE.Vector3(-15, 5, -42.4);
-          const currentTarget = new THREE.Vector3(-30, 0, -40).lerp(endTarget, t * 0.5); 
-          const lookDir = new THREE.Vector3().subVectors(currentTarget, camera.position).normalize();
-          controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
-        }
-        // 14. WALK TO WINDOW VIEW POINT (52.5s - 54.5s)
-        else if (elapsed < 54.5) {
-          let t = smoothStep((elapsed - 52.5) / 2.0);
-          let curX = -30 + (t * 15); // to -15
-          let walkBob = Math.sin((elapsed - 52.5) * 8.5) * 0.16;
-          camera.position.set(curX, walkBob, -25);
-          
-          const windowTarget = new THREE.Vector3(-15, 5, -42.4);
-          const lookDir = new THREE.Vector3().subVectors(windowTarget, camera.position).normalize();
-          controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
-        }
-        // 15. PAUSE AT WINDOW & CONCLUDE INTRO (54.5s+)
+        // 15. PAUSE AT WINDOW & CONCLUDE INTRO (56.0s+)
         else {
           camera.position.set(-15, 0, -25);
           const windowTarget = new THREE.Vector3(-15, 5, -42.4);
@@ -2426,7 +2534,52 @@ export function initThreeJS(mountElement) {
         const isNearCabinet = camera.position.x < -35 && camera.position.z > 25;
         if (isNearCabinet) {
           cutsceneCabinetTriggered = true;
-          document.getElementById('cutscene-cabinet').classList.add('active');
+          controls.enabled = false;
+          
+          const animDuration = 1.0;
+          let drawerWorldPos = new THREE.Vector3(-45, 0, 35);
+          if (window.cabinetTargetDrawer) window.cabinetTargetDrawer.getWorldPosition(drawerWorldPos);
+          
+          activeCameraAnimation = {
+            elapsed: 0,
+            duration: animDuration,
+            startCameraPos: camera.position.clone(),
+            startTarget: controls.target.clone(),
+            endTarget: new THREE.Vector3(-45, -3.0, 35),
+            startDrawerZ: window.cabinetTargetDrawer ? window.cabinetTargetDrawer.position.z : 0,
+            update: function(dt) {
+               this.elapsed += dt;
+               let t = Math.min(this.elapsed / this.duration, 1.0);
+               let easeT = smoothStep(t);
+               
+               const currentTarget = new THREE.Vector3().lerpVectors(this.startTarget, this.endTarget, easeT);
+               const lookDir = new THREE.Vector3().subVectors(currentTarget, camera.position).normalize();
+               controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+               
+               if (window.cabinetTargetDrawer && window.cabinetFolderWrapper) {
+                   window.cabinetFolderWrapper.visible = true;
+                   let depth = 3.0; 
+                   if (window.cabinetTargetDrawer.geometry.boundingBox) {
+                       depth = window.cabinetTargetDrawer.geometry.boundingBox.max.z - window.cabinetTargetDrawer.geometry.boundingBox.min.z;
+                   }
+                   window.cabinetTargetDrawer.position.z = this.startDrawerZ + (depth * 0.9 * easeT);
+                   
+                   const startFolderPos = drawerWorldPos.clone(); startFolderPos.y += 1.0;
+                   const endFolderPos = camera.position.clone().add(lookDir.clone().multiplyScalar(2.0));
+                   endFolderPos.y -= 0.5;
+                   
+                   const folderPos = new THREE.Vector3().lerpVectors(startFolderPos, endFolderPos, Math.pow(easeT, 2));
+                   window.cabinetFolderWrapper.position.copy(folderPos);
+                   window.cabinetFolderWrapper.rotation.y = Math.PI / 6 + (easeT * Math.PI * 2);
+                   window.cabinetFolderWrapper.rotation.x = easeT * Math.PI / 4;
+               }
+
+               if (t >= 1.0) {
+                 document.getElementById('cutscene-cabinet').classList.add('active');
+                 activeCameraAnimation = null;
+               }
+            }
+          };
         }
       }
   
