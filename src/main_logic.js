@@ -30,17 +30,33 @@ export function initThreeJS(mountElement) {
       if (!isIntroPlaying) return;
       isIntroPlaying = false;
       controls.enabled = true;
-      camera.position.set(-15, 0, 0);
-      controls.target.set(-15, 0, -10);
+      camera.position.set(-15, 0, -25);
+      const windowTarget = new THREE.Vector3(-15, 5, -42.4);
+      const lookDir = new THREE.Vector3().subVectors(windowTarget, camera.position).normalize();
+      controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+      
       const blink = document.getElementById('blink-overlay');
       if (blink) {
         blink.style.display = 'none';
         blink.style.opacity = '0';
       }
-      ['cutscene-table', 'cutscene-board', 'cutscene-cabinet', 'cutscene-window'].forEach(id => {
+      
+      ['cutscene-table', 'cutscene-board', 'cutscene-cabinet'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.remove('active');
       });
+
+      if (!window.windowCutsceneShown) {
+        window.windowCutsceneShown = true;
+        const windowCutsceneEl = document.getElementById('cutscene-window');
+        if (windowCutsceneEl) windowCutsceneEl.classList.add('active');
+        cutsceneWindowTriggered = true;
+        const vid = document.getElementById('windowVideoRoom');
+        if (vid && vid.paused) {
+          vid.play().catch(() => {});
+        }
+      }
+
       const skipBtn = document.getElementById('skip-intro-btn');
       if (skipBtn) skipBtn.style.display = 'none';
       const controlsHelp = document.getElementById('controls-help');
