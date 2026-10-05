@@ -16,7 +16,12 @@ export default function UI() {
         <div id="loading-status">Loading Assets...</div>
         <div id="loading" style={{ display: 'none' }}></div>
       </div>
-      <div id="blink-overlay"></div>
+      <div id="blink-overlay" className="flex items-center justify-center flex-col">
+        <div id="scroll-prompt" className="text-white/70 font-mono text-xl tracking-[0.3em] flex flex-col items-center gap-4 opacity-100 transition-opacity duration-1000">
+          <p>SCROLL TO WAKE</p>
+          <div className="w-px h-16 bg-gradient-to-b from-white/70 to-transparent"></div>
+        </div>
+      </div>
       <button
         id="skip-intro-btn"
         onClick={() => { if (window.skipIntroTour) window.skipIntroTour(); }}

@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import Lenis from 'lenis';
 
 export function initThreeJS(mountElement) {
   let reqId = null;
@@ -25,12 +26,38 @@ export function initThreeJS(mountElement) {
     let isIntroPlaying = true;
     let introStartTime = 0;
     let introElapsedTime = 0;
-    let lastIntroFrameTime = 0;
+    
+    // Create Scroll Proxy to force scrollbar
+    const scrollProxy = document.createElement('div');
+    scrollProxy.id = 'scroll-proxy';
+    scrollProxy.style.height = '15000px'; 
+    scrollProxy.style.width = '100%';
+    scrollProxy.style.position = 'absolute';
+    scrollProxy.style.top = '0';
+    scrollProxy.style.left = '0';
+    scrollProxy.style.zIndex = '-10';
+    document.body.appendChild(scrollProxy);
+
+    // Initialize Lenis
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smooth: true,
+    });
+    
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
 
     window.skipIntroTour = () => {
       if (!isIntroPlaying) return;
       isIntroPlaying = false;
       controls.enabled = true;
+      if (typeof lenis !== 'undefined') lenis.destroy();
+      const p = document.getElementById('scroll-proxy');
+      if (p) p.remove();
       camera.position.set(-15, 0, -25);
       const windowTarget = new THREE.Vector3(-15, 5, -42.4);
       const lookDir = new THREE.Vector3().subVectors(windowTarget, camera.position).normalize();
@@ -2035,15 +2062,11 @@ export function initThreeJS(mountElement) {
 
       // --- CINEMATIC AUTO MOVEMENT SEQUENCE ---
       if (isIntroPlaying && introStartTime > 0) {
-        const now = performance.now();
-        if (!lastIntroFrameTime) lastIntroFrameTime = now;
-        const deltaSeconds = (now - lastIntroFrameTime) / 1000;
-        lastIntroFrameTime = now;
-
-        // ONLY advance timeline if NO cutscene is active!
-        if (!isCutsceneActive) {
-          introElapsedTime += Math.min(deltaSeconds, 0.1);
-        }
+        const maxScroll = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) - window.innerHeight;
+        const currentScroll = window.scrollY;
+        const progress = maxScroll > 0 ? (currentScroll / maxScroll) : 0;
+        
+        introElapsedTime = progress * 56.0;
 
         const elapsed = introElapsedTime;
         const blink = document.getElementById('blink-overlay');
