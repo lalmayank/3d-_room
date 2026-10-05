@@ -2345,8 +2345,26 @@ export function initThreeJS(mountElement) {
   
         if (isNearTable) {
           cutsceneTableTriggered = true;
-          document.getElementById('cutscene-table').classList.add('active');
-          setTimeout(() => { document.getElementById('newspaper-container').classList.add('thrown'); }, 600); 
+          
+          const startPos = camera.position.clone();
+          const startTarget = controls.target.clone();
+          const endPos = camera.position.clone(); // Stay in place
+          const tableCenterTarget = new THREE.Vector3(-15, -15.2, 0); // Center of the table
+          
+          activeCameraAnimation = {
+            startPos,
+            endPos,
+            startTarget,
+            endTarget: tableCenterTarget,
+            startTime: performance.now(),
+            duration: 600
+          };
+          controls.enabled = false;
+          
+          setTimeout(() => {
+            document.getElementById('cutscene-table').classList.add('active');
+            setTimeout(() => { document.getElementById('newspaper-container').classList.add('thrown'); }, 600); 
+          }, 600);
         }
       }
   

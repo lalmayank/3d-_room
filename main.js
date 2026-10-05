@@ -510,15 +510,15 @@
         canvasTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
       }
 
-      const acmBoardGeo = new THREE.PlaneGeometry(32, 21); 
+      const acmBoardGeo = new THREE.PlaneGeometry(37.6, 23.6); 
       const acmBoardMat = new THREE.MeshStandardMaterial({ 
         map: canvasTexture, 
         roughness: 0.85,
         metalness: 0.0,
         side: THREE.FrontSide,
         polygonOffset: true,
-        polygonOffsetFactor: -1.0,
-        polygonOffsetUnits: -1.0
+        polygonOffsetFactor: -2.0,
+        polygonOffsetUnits: -2.0
       });
 
       const westBoardImg = new THREE.Mesh(acmBoardGeo, acmBoardMat);

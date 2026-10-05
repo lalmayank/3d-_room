@@ -141,9 +141,9 @@
       top: -50%;
       left: 150%; 
       transform: translate(-50%, -50%) scale(0.1) rotate(1080deg);
-      width: 25vw; 
-      min-width: 200px;
-      max-width: 300px;
+      width: 35vw; 
+      min-width: 300px;
+      max-width: 450px;
       opacity: 0;
       transition: all 1.2s cubic-bezier(0.22, 1, 0.36, 1);
       z-index: 105;
@@ -170,7 +170,7 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%) scaleX(0) scaleY(0.9);
-      width: 220%;
+      width: 160%;
       opacity: 0;
       transform-origin: center;
       border-radius: 4px;

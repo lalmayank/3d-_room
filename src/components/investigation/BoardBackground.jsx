@@ -26,7 +26,7 @@ export const BoardBackground = ({ onClose }) => {
         return Math.max(0, Math.min(1, newP));
       });
     };
-    
+
     let isDragging = false;
     let dragStartY = 0;
     let dragStartX = 0;
@@ -75,14 +75,14 @@ export const BoardBackground = ({ onClose }) => {
     window.addEventListener('mouseup', handleMouseUp);
     container.addEventListener('touchstart', handleTouchStart, { passive: false });
     container.addEventListener('touchmove', handleTouchMove, { passive: false });
-    
+
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         onClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    
+
     return () => {
       container.removeEventListener('wheel', handleWheel);
       container.removeEventListener('mousedown', handleMouseDown);
@@ -109,19 +109,19 @@ export const BoardBackground = ({ onClose }) => {
   const translateY = typeof window !== 'undefined' ? (window.innerHeight / 2) - currentY : 0;
 
   return (
-    <div 
+    <div
       ref={containerRef}
-      className="absolute inset-0 bg-[#c8ab83] overflow-hidden select-none cursor-grab active:cursor-grabbing" 
+      className="absolute inset-0 bg-[#c8ab83] overflow-hidden select-none cursor-grab active:cursor-grabbing"
       style={{ fontFamily: "sans-serif" }}
       onClick={(e) => e.stopPropagation()}
     >
-      
+
       {/* Scroll / Drag Hint */}
-      <div 
+      <div
         className="fixed bottom-10 left-1/2 -translate-x-1/2 text-white font-mono text-sm md:text-base tracking-widest z-[1000] bg-black/75 px-6 py-3 rounded-full shadow-2xl transition-opacity duration-500 pointer-events-none border border-white/20"
         style={{ opacity: progress > 0.02 ? 0 : 1 }}
       >
-        &#8597; SCROLL OR DRAG TO INVESTIGATE
+        &#8597; SCROLL TO REVEAL EVENTS
       </div>
 
       {/* Progress Pill Indicator */}
@@ -142,16 +142,16 @@ export const BoardBackground = ({ onClose }) => {
       </button>
 
       {/* The Moving Cork Board */}
-      <div 
+      <div
         ref={boardRef}
         className="absolute w-[5000px] h-[5000px] bg-[#c8ab83] origin-top-left"
-        style={{ 
+        style={{
           transform: `translate(${translateX}px, ${translateY}px)`,
           transition: 'transform 0.12s cubic-bezier(0.1, 0.9, 0.2, 1)'
         }}
       >
         {/* Map Background Layer */}
-        <div 
+        <div
           className="absolute inset-0 opacity-65 pointer-events-none z-0"
           style={{
             backgroundImage: `
@@ -169,18 +169,19 @@ export const BoardBackground = ({ onClose }) => {
 
         {/* Red Twine Strings */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none z-[1]">
-          <line className="thread" x1="1800" y1="2000" x2="3000" y2="2570" style={{ stroke: '#d32f2f', strokeWidth: 5, strokeLinecap: 'round', filter: 'drop-shadow(2px 4px 3px rgba(0,0,0,0.6))', strokeDasharray: 2000, strokeDashoffset: progress > 0.05 ? 0 : 2000, transition: 'stroke-dashoffset 1.5s ease' }} /> 
-          <line className="thread" x1="1700" y1="3100" x2="3000" y2="2570" style={{ stroke: '#d32f2f', strokeWidth: 5, strokeLinecap: 'round', filter: 'drop-shadow(2px 4px 3px rgba(0,0,0,0.6))', strokeDasharray: 2000, strokeDashoffset: progress > 0.30 ? 0 : 2000, transition: 'stroke-dashoffset 1.5s ease' }} /> 
-          <line className="thread" x1="2600" y1="3200" x2="3000" y2="2570" style={{ stroke: '#d32f2f', strokeWidth: 5, strokeLinecap: 'round', filter: 'drop-shadow(2px 4px 3px rgba(0,0,0,0.6))', strokeDasharray: 2000, strokeDashoffset: progress > 0.55 ? 0 : 2000, transition: 'stroke-dashoffset 1.5s ease' }} /> 
-          <line className="thread" x1="3450" y1="2100" x2="3000" y2="2570" style={{ stroke: '#d32f2f', strokeWidth: 5, strokeLinecap: 'round', filter: 'drop-shadow(2px 4px 3px rgba(0,0,0,0.6))', strokeDasharray: 2000, strokeDashoffset: progress > 0.80 ? 0 : 2000, transition: 'stroke-dashoffset 1.5s ease' }} /> 
+          <line className="thread" x1="2575" y1="2600" x2="1800" y2="2000" style={{ stroke: '#d32f2f', strokeWidth: 5, strokeLinecap: 'round', filter: 'drop-shadow(2px 4px 3px rgba(0,0,0,0.6))', strokeDasharray: 2000, strokeDashoffset: progress >= 0 ? 0 : 2000, transition: 'stroke-dashoffset 1.5s ease' }} />
+          <line className="thread" x1="1800" y1="2000" x2="1700" y2="3100" style={{ stroke: '#d32f2f', strokeWidth: 5, strokeLinecap: 'round', filter: 'drop-shadow(2px 4px 3px rgba(0,0,0,0.6))', strokeDasharray: 2000, strokeDashoffset: progress > 0.05 ? 0 : 2000, transition: 'stroke-dashoffset 1.5s ease' }} />
+          <line className="thread" x1="1700" y1="3100" x2="2600" y2="3200" style={{ stroke: '#d32f2f', strokeWidth: 5, strokeLinecap: 'round', filter: 'drop-shadow(2px 4px 3px rgba(0,0,0,0.6))', strokeDasharray: 2000, strokeDashoffset: progress > 0.30 ? 0 : 2000, transition: 'stroke-dashoffset 1.5s ease' }} />
+          <line className="thread" x1="2600" y1="3200" x2="3450" y2="2100" style={{ stroke: '#d32f2f', strokeWidth: 5, strokeLinecap: 'round', filter: 'drop-shadow(2px 4px 3px rgba(0,0,0,0.6))', strokeDasharray: 2000, strokeDashoffset: progress > 0.55 ? 0 : 2000, transition: 'stroke-dashoffset 1.5s ease' }} />
+          <line className="thread" x1="3450" y1="2100" x2="2575" y2="2600" style={{ stroke: '#d32f2f', strokeWidth: 5, strokeLinecap: 'round', filter: 'drop-shadow(2px 4px 3px rgba(0,0,0,0.6))', strokeDasharray: 2000, strokeDashoffset: progress > 0.80 ? 0 : 2000, transition: 'stroke-dashoffset 1.5s ease' }} />
         </svg>
-
+        
         {/* CLUSTER CENTER: EVENTS (Central Node) */}
-        <div className={`absolute -translate-x-1/2 -translate-y-1/2 z-10 transition-opacity duration-700 ${progress >= 0.85 ? 'opacity-100' : 'opacity-20 pointer-events-none'}`} style={{ left: 3000, top: 2570 }}>
+        <div className={`absolute -translate-x-1/2 -translate-y-1/2 z-10 transition-opacity duration-700 ${progress >= 0.85 ? 'opacity-100' : 'opacity-20 pointer-events-none'}`} style={{ left: 2575, top: 2600 }}>
           <Pin style={{ top: -10 }} />
-          <div 
+          <div
             className="w-[320px] h-[120px] bg-[#e8dbbe] rounded-sm flex justify-center items-center"
-            style={{ 
+            style={{
               backgroundImage: 'radial-gradient(circle at center, #f5ecd6 0%, #e8dbbe 80%, #d1c1a5 100%)',
               boxShadow: '4px 8px 15px rgba(0,0,0,0.4), inset 0 0 20px rgba(139,115,85,0.2)',
               clipPath: 'polygon(1% 2%, 98% 0%, 99% 97%, 3% 99%, 0% 50%)'
@@ -195,18 +196,18 @@ export const BoardBackground = ({ onClose }) => {
         {/* CLUSTER 1: Nerf Battle */}
         <div className="absolute -translate-x-1/2 -translate-y-1/2 z-10 opacity-100" style={{ left: 1800, top: 2000 }}>
           <Tape style={{ top: -10, right: 20, transform: 'rotate(10deg)' }} />
-          <NewspaperBlock 
+          <NewspaperBlock
             header="THE DAILY CHRONICLE"
             title="Mystery Solved!"
             content="After weeks of speculation, authorities have finally cracked the case. The missing documents were found hidden in plain sight. Local residents express relief as the primary suspect is taken into custody. Further details will be released in tomorrow's edition."
             style={{ position: 'absolute', left: -200, top: -50, transform: 'rotate(-8deg)', zIndex: 5 }}
           />
-          
-          <img 
-            src="/evidence_board/evidence_1.jpeg" 
-            alt="Evidence 1" 
+
+          <img
+            src="/evidence_board/evidence_1.jpeg"
+            alt="Evidence 1"
             className="w-[280px] object-cover shadow-[3px_6px_15px_rgba(0,0,0,0.5)] bg-white p-2 pb-6 relative z-10"
-            style={{ transform: 'rotate(-3deg)' }} 
+            style={{ transform: 'rotate(-3deg)' }}
           />
           <Pin style={{ left: 20, top: 10, position: 'absolute', zIndex: 20 }} />
 
@@ -218,30 +219,30 @@ export const BoardBackground = ({ onClose }) => {
         {/* CLUSTER 2: AI/ML Workshop */}
         <div className={`absolute -translate-x-1/2 -translate-y-1/2 z-10 transition-opacity duration-500 ${progress >= 0.15 ? 'opacity-100' : 'opacity-20'}`} style={{ left: 1700, top: 3100 }}>
           <Pin style={{ top: 0, left: 0, position: 'absolute', zIndex: 20 }} />
-          <NewspaperBlock 
+          <NewspaperBlock
             header="EVENING POST"
             title="Cipher Decoded!"
             content="Another breakthrough in the ongoing saga. Investigators pieced together the final clues yesterday evening inside the underground server room."
             style={{ position: 'absolute', left: -180, top: 100, width: 180, transform: 'rotate(-5deg)', zIndex: 5 }}
           />
 
-          <img 
-            src="/evidence_board/evidence_2.jpeg" 
-            alt="Evidence 2" 
+          <img
+            src="/evidence_board/evidence_2.jpeg"
+            alt="Evidence 2"
             className="w-[280px] object-cover shadow-[3px_6px_15px_rgba(0,0,0,0.5)] bg-white p-2 pb-6 relative z-10"
-            style={{ transform: 'rotate(2deg)' }} 
+            style={{ transform: 'rotate(2deg)' }}
           />
         </div>
 
         {/* CLUSTER 3: Semicode */}
         <div className={`absolute -translate-x-1/2 -translate-y-1/2 z-10 transition-opacity duration-500 ${progress >= 0.35 ? 'opacity-100' : 'opacity-20'}`} style={{ left: 2600, top: 3200 }}>
           <Pin style={{ left: '50%', top: 5, position: 'absolute', zIndex: 20 }} />
-          
-          <img 
-            src="/evidence_board/evidence_3.jpeg" 
-            alt="Evidence 3" 
+
+          <img
+            src="/evidence_board/evidence_3.jpeg"
+            alt="Evidence 3"
             className="w-[280px] object-cover shadow-[3px_6px_15px_rgba(0,0,0,0.5)] bg-white p-2 pb-6 relative z-10"
-            style={{ transform: 'rotate(-2deg)' }} 
+            style={{ transform: 'rotate(-2deg)' }}
           />
 
           <StickyNote style={{ position: 'absolute', left: 240, top: 100, transform: 'rotate(-4deg)', zIndex: 12 }}>
@@ -252,7 +253,7 @@ export const BoardBackground = ({ onClose }) => {
 
         {/* CLUSTER 4: Shark Tank */}
         <div className={`absolute -translate-x-1/2 -translate-y-1/2 z-10 transition-opacity duration-500 ${progress >= 0.60 ? 'opacity-100' : 'opacity-20'}`} style={{ left: 3450, top: 2100 }}>
-          <NewspaperBlock 
+          <NewspaperBlock
             header="THE TRIBUNE"
             title="The Vault Heist"
             content="The conclusion to the events that shocked the council. Full blueprints and suspect transcripts retrieved."
@@ -260,11 +261,11 @@ export const BoardBackground = ({ onClose }) => {
           />
 
           <Pin style={{ left: '30%', top: 5, position: 'absolute', zIndex: 20 }} />
-          <img 
-            src="/evidence_board/evidence_4.jpeg" 
-            alt="Evidence 4" 
+          <img
+            src="/evidence_board/evidence_4.jpeg"
+            alt="Evidence 4"
             className="w-[280px] object-cover shadow-[3px_6px_15px_rgba(0,0,0,0.5)] bg-white p-2 pb-6 relative z-10"
-            style={{ transform: 'rotate(4deg)' }} 
+            style={{ transform: 'rotate(4deg)' }}
           />
 
           <StickyNote style={{ position: 'absolute', right: -100, top: 120, transform: 'rotate(-6deg)', zIndex: 9 }}>
@@ -272,19 +273,19 @@ export const BoardBackground = ({ onClose }) => {
           </StickyNote>
 
           <div style={{ position: 'absolute', top: 320, left: 0, transform: 'rotate(-3deg)', zIndex: 8 }}>
-            <DocumentFile 
-              title="VAULT BLUEPRINTS" 
+            <DocumentFile
+              title="VAULT BLUEPRINTS"
               content="Reports indicate subterranean passages beneath the old council library..."
               style={{ transform: 'rotate(-5deg)', marginBottom: -20 }}
             />
             <Tape style={{ top: -10, left: 30 }} />
-            <DocumentFile 
-              title="COUNCIL MINUTES" 
+            <DocumentFile
+              title="COUNCIL MINUTES"
               content="Deliberation on annual hackathon logistics and security protocols..."
               style={{ transform: 'rotate(8deg)', marginLeft: 50, marginBottom: -10 }}
             />
-            <DocumentFile 
-              title="FORGOTTEN FILES" 
+            <DocumentFile
+              title="FORGOTTEN FILES"
               content="Case #404: The missing master key to the archive safe."
               style={{ transform: 'rotate(2deg)', background: '#d4c4a1', position: 'relative' }}
             />
