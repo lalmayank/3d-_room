@@ -6,13 +6,31 @@ const POINTS = [
   { x: 1700, y: 3100 }, // AI/ML
   { x: 2600, y: 3200 }, // Semicode
   { x: 3450, y: 2100 }, // Shark Tank
-  { x: 3000, y: 2570 }  // Center (India)
+  { x: 2575, y: 2600 }  // Center (EVENTS)
 ];
 
 export const BoardBackground = ({ onClose }) => {
   const [progress, setProgress] = useState(0);
+  const [zoomOutActive, setZoomOutActive] = useState(false);
+  const zoomTimeoutRef = useRef(null);
   const boardRef = useRef(null);
   const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (progress > 0.80) {
+      if (!zoomTimeoutRef.current) {
+        zoomTimeoutRef.current = setTimeout(() => {
+          setZoomOutActive(true);
+        }, 1500);
+      }
+    } else {
+      setZoomOutActive(false);
+      if (zoomTimeoutRef.current) {
+        clearTimeout(zoomTimeoutRef.current);
+        zoomTimeoutRef.current = null;
+      }
+    }
+  }, [progress]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -104,9 +122,9 @@ export const BoardBackground = ({ onClose }) => {
   const currentX = POINTS[index].x + (POINTS[nextIndex].x - POINTS[index].x) * segmentProgress;
   const currentY = POINTS[index].y + (POINTS[nextIndex].y - POINTS[index].y) * segmentProgress;
 
-  // Center the camera on the screen
-  const translateX = typeof window !== 'undefined' ? (window.innerWidth / 2) - currentX : 0;
-  const translateY = typeof window !== 'undefined' ? (window.innerHeight / 2) - currentY : 0;
+  const scale = zoomOutActive ? 0.45 : 1.0;
+
+
 
   return (
     <div
@@ -142,14 +160,22 @@ export const BoardBackground = ({ onClose }) => {
       </button>
 
       {/* The Moving Cork Board */}
-      <div
-        ref={boardRef}
-        className="absolute w-[5000px] h-[5000px] bg-[#c8ab83] origin-top-left"
-        style={{
-          transform: `translate(${translateX}px, ${translateY}px)`,
-          transition: 'transform 0.12s cubic-bezier(0.1, 0.9, 0.2, 1)'
-        }}
-      >
+      <div className="absolute top-1/2 left-1/2 w-0 h-0 z-0">
+        <div
+          className="absolute w-0 h-0"
+          style={{
+            transform: `scale(${scale})`,
+            transition: 'transform 1.5s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
+        >
+          <div
+            ref={boardRef}
+            className="absolute w-[5000px] h-[5000px] bg-[#c8ab83] origin-top-left"
+            style={{
+              transform: `translate(${-currentX}px, ${-currentY}px)`,
+              transition: 'transform 0.12s cubic-bezier(0.1, 0.9, 0.2, 1)'
+            }}
+          >
         {/* Map Background Layer */}
         <div
           className="absolute inset-0 opacity-65 pointer-events-none z-0"
@@ -292,7 +318,8 @@ export const BoardBackground = ({ onClose }) => {
             <Pin style={{ left: 10, top: 10 }} />
           </div>
         </div>
-
+          </div>
+        </div>
       </div>
     </div>
   );

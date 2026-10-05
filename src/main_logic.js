@@ -2131,8 +2131,8 @@ export function initThreeJS(mountElement) {
           const lookDir = new THREE.Vector3().subVectors(targetLook, camera.position).normalize();
           controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
   
-          // As we finish looking down, trigger table cutscene
-          if (!tableCutsceneShown) {
+          // Trigger table cutscene near the end of the animation
+          if (!tableCutsceneShown && elapsed > 30.3) {
             tableCutsceneShown = true;
             document.getElementById('cutscene-table').classList.add('active');
             setTimeout(() => {
@@ -2144,12 +2144,26 @@ export function initThreeJS(mountElement) {
   
         // 6. RAISE GAZE AFTER TABLE CUTSCENE IS CLOSED BY USER (30.5s - 31.5s)
         else if (elapsed < 31.5) {
-          camera.position.set(-1.5, 0, 0);
-          let t = smoothStep((elapsed - 30.5) / 1.0);
-          let straightTarget = new THREE.Vector3(-10.5, 0, 0);
-          let targetLook = new THREE.Vector3().lerpVectors(tableFocusTarget, straightTarget, t);
-          const lookDir = new THREE.Vector3().subVectors(targetLook, camera.position).normalize();
-          controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+          if (!tableCutsceneShown) {
+            tableCutsceneShown = true;
+            document.getElementById('cutscene-table').classList.add('active');
+            setTimeout(() => {
+              const nc = document.getElementById('newspaper-container');
+              if (nc) nc.classList.add('thrown');
+            }, 200);
+            // Snap camera to look-down target
+            let straightTarget = new THREE.Vector3(-10.5, 0, 0);
+            let targetLook = new THREE.Vector3().lerpVectors(straightTarget, tableFocusTarget, 1);
+            const lookDir = new THREE.Vector3().subVectors(targetLook, camera.position).normalize();
+            controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+          } else {
+            camera.position.set(-1.5, 0, 0);
+            let t = smoothStep((elapsed - 30.5) / 1.0);
+            let straightTarget = new THREE.Vector3(-10.5, 0, 0);
+            let targetLook = new THREE.Vector3().lerpVectors(tableFocusTarget, straightTarget, t);
+            const lookDir = new THREE.Vector3().subVectors(targetLook, camera.position).normalize();
+            controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+          }
         }
   
         // 7. TURN SOUTH & WALK CLOSER TO BOARD WITH EYES LOCKED ON BOARD (31.5s - 37.5s)
