@@ -86,24 +86,7 @@ export default function UI() {
             filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))'
           }}
         />
-        <div style={{
-          position: 'absolute',
-          bottom: '30px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'rgba(0, 0, 0, 0.65)',
-          backdropFilter: 'blur(8px)',
-          padding: '10px 24px',
-          borderRadius: '20px',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          color: 'white',
-          fontFamily: 'sans-serif',
-          fontSize: '14px',
-          letterSpacing: '1px',
-          pointerEvents: 'none'
-        }}>
-          Click anywhere to step back
-        </div>
+
       </div>
       <div id="cutscene-cabinet" className="cutscene-screen">
         <CabinetDossier onClose={() => {

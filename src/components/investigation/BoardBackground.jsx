@@ -33,84 +33,25 @@ export const BoardBackground = ({ onClose }) => {
   }, [progress]);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleWheel = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setProgress(p => {
-        const newP = p + (e.deltaY * 0.0004);
-        return Math.max(0, Math.min(1, newP));
-      });
+    const handleScroll = () => {
+      const maxScroll = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) - window.innerHeight;
+      if (maxScroll <= 0) return;
+      const scrollProgress = window.scrollY / maxScroll;
+      const elapsed = scrollProgress * 70.0;
+      
+      // Map elapsed 41.5 - 47.5 to progress 0 - 1
+      const p = Math.max(0, Math.min(1, (elapsed - 41.5) / 6.0));
+      setProgress(p);
     };
 
-    let isDragging = false;
-    let dragStartY = 0;
-    let dragStartX = 0;
-
-    const handleMouseDown = (e) => {
-      // Don't drag if clicking buttons
-      if (e.target.closest('button')) return;
-      isDragging = true;
-      dragStartY = e.clientY;
-      dragStartX = e.clientX;
-    };
-
-    const handleMouseMove = (e) => {
-      if (!isDragging) return;
-      e.preventDefault();
-      const delta = (dragStartY - e.clientY) + (dragStartX - e.clientX);
-      dragStartY = e.clientY;
-      dragStartX = e.clientX;
-      setProgress(p => {
-        const newP = p + (delta * 0.0008);
-        return Math.max(0, Math.min(1, newP));
-      });
-    };
-
-    const handleMouseUp = () => {
-      isDragging = false;
-    };
-
-    let touchStartY = 0;
-    const handleTouchStart = (e) => {
-      touchStartY = e.touches[0].clientY;
-    };
-    const handleTouchMove = (e) => {
-      e.preventDefault();
-      const deltaY = touchStartY - e.touches[0].clientY;
-      touchStartY = e.touches[0].clientY;
-      setProgress(p => {
-        const newP = p + (deltaY * 0.001);
-        return Math.max(0, Math.min(1, newP));
-      });
-    };
-
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    container.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    container.addEventListener('touchstart', handleTouchStart, { passive: false });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Initialize
+    handleScroll();
 
     return () => {
-      container.removeEventListener('wheel', handleWheel);
-      container.removeEventListener('mousedown', handleMouseDown);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('scroll', handleScroll);
     };
-  }, [onClose]);
+  }, []);
 
   // Calculate Camera Position
   const totalSegments = POINTS.length - 1;
@@ -147,17 +88,6 @@ export const BoardBackground = ({ onClose }) => {
         <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
         CASE EVIDENCE: {Math.round(progress * 100)}%
       </div>
-
-      {/* Close Button */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onClose();
-        }}
-        className="fixed top-8 right-10 text-white bg-red-700/90 hover:bg-red-600 px-6 py-2.5 rounded-full font-bold tracking-widest shadow-[0_0_20px_rgba(255,0,0,0.5)] z-[1000] transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-2 text-sm border border-red-400/40"
-      >
-        <span>&#10005;</span> STEP BACK
-      </button>
 
       {/* The Moving Cork Board */}
       <div className="absolute top-1/2 left-1/2 w-0 h-0 z-0">

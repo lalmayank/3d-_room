@@ -2061,14 +2061,56 @@ export function initThreeJS(mountElement) {
       Boolean(document.getElementById('cutscene-window')?.classList.contains('active'));
 
     // --- CINEMATIC AUTO MOVEMENT SEQUENCE ---
-    if (isIntroPlaying && introStartTime > 0) {
+    if (introStartTime > 0 && document.getElementById('scroll-proxy')) {
       const maxScroll = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) - window.innerHeight;
       const currentScroll = window.scrollY;
       const progress = maxScroll > 0 ? (currentScroll / maxScroll) : 0;
+      introElapsedTime = progress * 70.0;
 
-      introElapsedTime = progress * 56.0;
+      if (introElapsedTime < 69.9 && !isIntroPlaying) {
+        isIntroPlaying = true;
+        controls.enabled = false;
+        const skipBtn = document.getElementById('skip-intro-btn');
+        if (skipBtn) skipBtn.style.display = 'flex';
+      }
+    }
 
+    if (isIntroPlaying && introStartTime > 0) {
       const elapsed = introElapsedTime;
+      
+      if (typeof window.lastIntroElapsed === 'undefined') window.lastIntroElapsed = elapsed;
+      const isScrollingForward = elapsed >= window.lastIntroElapsed;
+      window.lastIntroElapsed = elapsed;
+
+      const handleCutscene = (id, start, end) => {
+         if (!window.cutsceneActiveState) window.cutsceneActiveState = {};
+         const wasActive = !!window.cutsceneActiveState[id];
+         let isActive = wasActive;
+         
+         if (elapsed >= start && elapsed <= end) {
+             if (isScrollingForward) isActive = true;
+         } else {
+             isActive = false;
+         }
+         
+         window.cutsceneActiveState[id] = isActive;
+         document.getElementById(id)?.classList.toggle('active', isActive);
+         return isActive;
+      };
+
+      const tableActive = handleCutscene('cutscene-table', 30.1, 34.5);
+      if (tableActive) {
+          document.getElementById('newspaper-container')?.classList.add('thrown');
+      } else {
+          document.getElementById('newspaper-container')?.classList.remove('thrown');
+      }
+
+      handleCutscene('cutscene-board', 41.5, 47.5);
+      handleCutscene('cutscene-cabinet', 54.0, 58.0);
+
+      const windowActive = handleCutscene('cutscene-window', 69.5, 999.0);
+      if (windowActive) window.windowCutsceneShown = true;
+
       const blink = document.getElementById('blink-overlay');
       const smoothStep = (t) => {
         const c = Math.max(0, Math.min(1, t));
@@ -2216,79 +2258,65 @@ export function initThreeJS(mountElement) {
         let targetLook = new THREE.Vector3().lerpVectors(straightTarget, tableFocusTarget, t);
         const lookDir = new THREE.Vector3().subVectors(targetLook, camera.position).normalize();
         controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
-
-        // Trigger table cutscene near the end of the animation
-        if (!tableCutsceneShown && elapsed > 30.3) {
-          tableCutsceneShown = true;
-          document.getElementById('cutscene-table').classList.add('active');
-          setTimeout(() => {
-            const nc = document.getElementById('newspaper-container');
-            if (nc) nc.classList.add('thrown');
-          }, 200);
-        }
       }
 
-      // 6. RAISE GAZE AFTER TABLE CUTSCENE IS CLOSED BY USER (30.5s - 31.5s)
-      else if (elapsed < 31.5) {
-        if (!tableCutsceneShown) {
-          tableCutsceneShown = true;
-          document.getElementById('cutscene-table').classList.add('active');
-          setTimeout(() => {
-            const nc = document.getElementById('newspaper-container');
-            if (nc) nc.classList.add('thrown');
-          }, 200);
-          // Snap camera to look-down target
-          let straightTarget = new THREE.Vector3(-10.5, 0, 0);
-          let targetLook = new THREE.Vector3().lerpVectors(straightTarget, tableFocusTarget, 1);
-          const lookDir = new THREE.Vector3().subVectors(targetLook, camera.position).normalize();
-          controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
-        } else {
-          camera.position.set(-1.5, 0, 0);
-          let t = smoothStep((elapsed - 30.5) / 1.0);
-          let straightTarget = new THREE.Vector3(-10.5, 0, 0);
-          let targetLook = new THREE.Vector3().lerpVectors(tableFocusTarget, straightTarget, t);
-          const lookDir = new THREE.Vector3().subVectors(targetLook, camera.position).normalize();
-          controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
-        }
+      // 5D. PAUSE AT TABLE (30.5s - 34.5s)
+      else if (elapsed < 34.5) {
+        camera.position.set(-1.5, 0, 0); 
+        const lookDir = new THREE.Vector3().subVectors(tableFocusTarget, camera.position).normalize();
+        controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
       }
 
-      // 7. TURN SOUTH & WALK CLOSER TO BOARD WITH EYES LOCKED ON BOARD (31.5s - 37.5s)
-      else if (elapsed < 32.5) {
+      // 6. RAISE GAZE AFTER TABLE CUTSCENE IS CLOSED BY USER (34.5s - 35.5s)
+      else if (elapsed < 35.5) {
+        camera.position.set(-1.5, 0, 0);
+        let t = smoothStep((elapsed - 34.5) / 1.0);
+        let straightTarget = new THREE.Vector3(-10.5, 0, 0);
+        let targetLook = new THREE.Vector3().lerpVectors(tableFocusTarget, straightTarget, t);
+        const lookDir = new THREE.Vector3().subVectors(targetLook, camera.position).normalize();
+        controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+      }
+
+      // 7. TURN SOUTH & WALK CLOSER TO BOARD WITH EYES LOCKED ON BOARD (35.5s - 41.5s)
+      else if (elapsed < 36.5) {
         // 7A: Turn left 90 deg standing in place at table (facing south along +z towards board)
-        let t = smoothStep((elapsed - 31.5) / 1.0);
+        let t = smoothStep((elapsed - 35.5) / 1.0);
         let angle = (Math.PI / 2) + (t * (Math.PI / 2));
         camera.position.set(-1.5, 0, 0);
         let forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
         controls.target.copy(camera.position).addScaledVector(forward, 0.1);
-      } else if (elapsed < 36.5) {
+      } else if (elapsed < 40.5) {
         // 7B: Walk closer to the board (z: 0 -> 24, x: -1.5 -> -5) with eyes strictly locked on the board
-        let t = smoothStep((elapsed - 32.5) / 4.0);
+        let t = smoothStep((elapsed - 36.5) / 4.0);
         let curX = -1.5 - (t * 3.5);
         let curZ = t * 24;
-        let walkBob = Math.sin((elapsed - 32.5) * 8.5) * 0.16;
+        let walkBob = Math.sin((elapsed - 36.5) * 8.5) * 0.16;
         camera.position.set(curX, walkBob, curZ);
 
         const southBoardTarget = new THREE.Vector3(-15, 5.0, 42.5);
         const lookDir = new THREE.Vector3().subVectors(southBoardTarget, camera.position).normalize();
         controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
-      } else if (elapsed < 37.5) {
+      } else if (elapsed < 41.5) {
         // 7C: Pause standing close at (-5, 0, 24) with eyes locked on board & open board cutscene
-        let t = smoothStep((elapsed - 36.5) / 1.0);
+        let t = smoothStep((elapsed - 40.5) / 1.0);
         let walkBob = Math.sin(4.0 * 8.5) * 0.16 * (1 - t);
         camera.position.set(-5, walkBob, 24);
         const southBoardTarget = new THREE.Vector3(-15, 5.0, 42.5);
         const lookDir = new THREE.Vector3().subVectors(southBoardTarget, camera.position).normalize();
         controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
-
-        if (!boardCutsceneShown) {
-          boardCutsceneShown = true;
-          document.getElementById('cutscene-board').classList.add('active');
-        }
       }
 
-      // 8. TURN TO FILE CABINET AFTER BOARD CUTSCENE IS CLOSED BY USER (37.5s - 38.5s)
-      else if (elapsed < 38.5) {
-        let t = smoothStep((elapsed - 37.5) / 1.0);
+      // 7D. PAUSE AT BOARD (41.5s - 47.5s)
+      else if (elapsed < 47.5) {
+        camera.position.set(-5, 0, 24);
+        const southBoardTarget = new THREE.Vector3(-15, 5.0, 42.5);
+        const lookDir = new THREE.Vector3().subVectors(southBoardTarget, camera.position).normalize();
+        controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+      }
+
+      // 8. TURN TO FILE CABINET AFTER BOARD CUTSCENE IS CLOSED BY USER (47.5s - 48.5s)
+      else if (elapsed < 48.5) {
+        let t = smoothStep((elapsed - 47.5) / 1.0);
         camera.position.set(-5, 0, 24);
         const startTarget = new THREE.Vector3(-15, 5.0, 42.5);
         const endTarget = new THREE.Vector3(-45, 0, 35);
@@ -2296,20 +2324,20 @@ export function initThreeJS(mountElement) {
         const lookDir = new THREE.Vector3().subVectors(currentTarget, camera.position).normalize();
         controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
       }
-      // 9. WALK TO FILE CABINET (38.5s - 42.5s)
-      else if (elapsed < 42.5) {
-        let t = smoothStep((elapsed - 38.5) / 4.0);
+      // 9. WALK TO FILE CABINET (48.5s - 52.5s)
+      else if (elapsed < 52.5) {
+        let t = smoothStep((elapsed - 48.5) / 4.0);
         let curX = -5 - (t * 40); // to -45 (Right side of cabinet, facing window)
         let curZ = 24 + (t * 1);  // to 25
-        let walkBob = Math.sin((elapsed - 38.5) * 8.5) * 0.16;
+        let walkBob = Math.sin((elapsed - 48.5) * 8.5) * 0.16;
         camera.position.set(curX, walkBob, curZ);
         const cabinetTarget = new THREE.Vector3(-45, 0, 35);
         const lookDir = new THREE.Vector3().subVectors(cabinetTarget, camera.position).normalize();
         controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
       }
-      // 10. PAUSE AT FILE CABINET, OPEN DRAWER & CUTSCENE (42.5s - 44.0s)
-      else if (elapsed < 44.0) {
-        let t = smoothStep((elapsed - 42.5) / 1.5);
+      // 10. PAUSE AT FILE CABINET, OPEN DRAWER & CUTSCENE (52.5s - 54.0s)
+      else if (elapsed < 54.0) {
+        let t = smoothStep((elapsed - 52.5) / 1.5);
         let walkBob = Math.sin(4.0 * 8.5) * 0.16 * (1 - smoothStep(t * 2.0));
         camera.position.set(-45, walkBob, 25);
 
@@ -2341,23 +2369,16 @@ export function initThreeJS(mountElement) {
           window.cabinetFolderWrapper.rotation.y = Math.PI / 6 + (t * Math.PI * 2);
           window.cabinetFolderWrapper.rotation.x = t * Math.PI / 4;
         }
-
-        // Trigger just before animation ends to avoid frame skip issues
-        if (!cabinetCutsceneShown && elapsed > 43.8) {
-          cabinetCutsceneShown = true;
-          document.getElementById('cutscene-cabinet').classList.add('active');
-        }
       }
-      // 10.5. REVERSE ANIMATION AFTER CUTSCENE (44.0s - 45.0s)
-      else if (elapsed < 45.0) {
-        if (!cabinetCutsceneShown) {
-          cabinetCutsceneShown = true;
-          document.getElementById('cutscene-cabinet').classList.add('active');
-
-          // Snap to final state just in case
-          if (window.cabinetTargetDrawer && window.cabinetFolderWrapper) {
-            window.cabinetFolderWrapper.visible = true;
-            let depth = 3.0;
+      // 10.1 PAUSE AT FILE CABINET (54.0s - 58.0s)
+      else if (elapsed < 58.0) {
+         camera.position.set(-45, 0, 25);
+         const drawerTarget = new THREE.Vector3(-45, -3.0, 35);
+         const lookDir = new THREE.Vector3().subVectors(drawerTarget, camera.position).normalize();
+         controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+         // Keep drawer open
+         if (window.cabinetTargetDrawer && window.cabinetFolderWrapper) {
+            let depth = 3.0; // Estimate
             if (window.cabinetTargetDrawer.geometry.boundingBox) {
               depth = window.cabinetTargetDrawer.geometry.boundingBox.max.z - window.cabinetTargetDrawer.geometry.boundingBox.min.z;
             }
@@ -2365,48 +2386,47 @@ export function initThreeJS(mountElement) {
             window.cabinetFolderWrapper.position.set(-45, -0.5, 27);
             window.cabinetFolderWrapper.rotation.y = Math.PI / 6 + Math.PI * 2;
             window.cabinetFolderWrapper.rotation.x = Math.PI / 4;
+            window.cabinetFolderWrapper.visible = true;
+         }
+      }
+      // 10.5. REVERSE ANIMATION AFTER CUTSCENE (58.0s - 59.0s)
+      else if (elapsed < 59.0) {
+        let t = smoothStep((elapsed - 58.0) / 1.0);
+        camera.position.set(-45, 0, 25);
+
+        const startTarget = new THREE.Vector3(-45, -3.0, 35);
+        const endTarget = new THREE.Vector3(-45, 0, 35);
+        const currentTarget = new THREE.Vector3().lerpVectors(startTarget, endTarget, t);
+        const lookDir = new THREE.Vector3().subVectors(currentTarget, camera.position).normalize();
+        controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+
+        // Reverse Drawer & Folder
+        if (window.cabinetTargetDrawer && window.cabinetFolderWrapper) {
+          let depth = 3.0;
+          if (window.cabinetTargetDrawer.geometry.boundingBox) {
+            depth = window.cabinetTargetDrawer.geometry.boundingBox.max.z - window.cabinetTargetDrawer.geometry.boundingBox.min.z;
           }
-          const drawerTarget = new THREE.Vector3(-45, -3.0, 35);
-          const lookDir = new THREE.Vector3().subVectors(drawerTarget, camera.position).normalize();
-          controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
-        } else {
-          let t = smoothStep((elapsed - 44.0) / 1.0);
-          camera.position.set(-45, 0, 25);
+          window.cabinetTargetDrawer.position.z = window.cabinetTargetDrawerStartZ + (depth * 0.9 * (1 - t));
 
-          const startTarget = new THREE.Vector3(-45, -3.0, 35);
-          const endTarget = new THREE.Vector3(-45, 0, 35);
-          const currentTarget = new THREE.Vector3().lerpVectors(startTarget, endTarget, t);
-          const lookDir = new THREE.Vector3().subVectors(currentTarget, camera.position).normalize();
-          controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
+          const drawerWorldPos = new THREE.Vector3();
+          window.cabinetTargetDrawer.getWorldPosition(drawerWorldPos);
 
-          // Reverse Drawer & Folder
-          if (window.cabinetTargetDrawer && window.cabinetFolderWrapper) {
-            let depth = 3.0;
-            if (window.cabinetTargetDrawer.geometry.boundingBox) {
-              depth = window.cabinetTargetDrawer.geometry.boundingBox.max.z - window.cabinetTargetDrawer.geometry.boundingBox.min.z;
-            }
-            window.cabinetTargetDrawer.position.z = window.cabinetTargetDrawerStartZ + (depth * 0.9 * (1 - t));
+          const startFolderPos = new THREE.Vector3(-45, -0.5, 27);
+          const endFolderPos = drawerWorldPos.clone();
+          endFolderPos.y += 1.0;
 
-            const drawerWorldPos = new THREE.Vector3();
-            window.cabinetTargetDrawer.getWorldPosition(drawerWorldPos);
+          const folderPos = new THREE.Vector3().lerpVectors(startFolderPos, endFolderPos, t);
+          window.cabinetFolderWrapper.position.copy(folderPos);
 
-            const startFolderPos = new THREE.Vector3(-45, -0.5, 27);
-            const endFolderPos = drawerWorldPos.clone();
-            endFolderPos.y += 1.0;
+          window.cabinetFolderWrapper.rotation.y = Math.PI / 6 + ((1 - t) * Math.PI * 2);
+          window.cabinetFolderWrapper.rotation.x = (1 - t) * Math.PI / 4;
 
-            const folderPos = new THREE.Vector3().lerpVectors(startFolderPos, endFolderPos, t);
-            window.cabinetFolderWrapper.position.copy(folderPos);
-
-            window.cabinetFolderWrapper.rotation.y = Math.PI / 6 + ((1 - t) * Math.PI * 2);
-            window.cabinetFolderWrapper.rotation.x = (1 - t) * Math.PI / 4;
-
-            if (t > 0.95) window.cabinetFolderWrapper.visible = false;
-          }
+          if (t > 0.95) window.cabinetFolderWrapper.visible = false;
         }
       }
-      // 11. TURN TO NAVIGATE AFTER CABINET CUTSCENE IS CLOSED BY USER (45.0s - 46.0s)
-      else if (elapsed < 46.0) {
-        let t = smoothStep((elapsed - 45.0) / 1.0);
+      // 11. TURN TO NAVIGATE AFTER CABINET CUTSCENE IS CLOSED BY USER (59.0s - 60.0s)
+      else if (elapsed < 60.0) {
+        let t = smoothStep((elapsed - 59.0) / 1.0);
         camera.position.set(-45, 0, 25);
         const startTarget = new THREE.Vector3(-45, 0, 35);
         const endTarget = new THREE.Vector3(-15, 5, -42.4); // Look directly at the window!
@@ -2414,19 +2434,19 @@ export function initThreeJS(mountElement) {
         const lookDir = new THREE.Vector3().subVectors(currentTarget, camera.position).normalize();
         controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
       }
-      // 12. WALK STRAIGHT TO THE WINDOW VIEW POINT (46.0s - 56.0s)
-      else if (elapsed < 56.0) {
-        let t = smoothStep((elapsed - 46.0) / 10.0);
+      // 12. WALK STRAIGHT TO THE WINDOW VIEW POINT (60.0s - 69.5s)
+      else if (elapsed < 69.5) {
+        let t = smoothStep((elapsed - 60.0) / 9.5);
         let curX = -45 + (t * 30); // from -45 to -15
         let curZ = 25 - (t * 50);  // from 25 to -25
-        let walkBob = Math.sin((elapsed - 46.0) * 8.5) * 0.16;
+        let walkBob = Math.sin((elapsed - 60.0) * 8.5) * 0.16;
         camera.position.set(curX, walkBob, curZ);
 
         const currentTarget = new THREE.Vector3(-15, 5, -42.4);
         const lookDir = new THREE.Vector3().subVectors(currentTarget, camera.position).normalize();
         controls.target.copy(camera.position).addScaledVector(lookDir, 0.1);
       }
-      // 15. PAUSE AT WINDOW & CONCLUDE INTRO (56.0s+)
+      // 15. PAUSE AT WINDOW & CONCLUDE INTRO (69.5s+)
       else {
         camera.position.set(-15, 0, -25);
         const windowTarget = new THREE.Vector3(-15, 5, -42.4);
@@ -2436,13 +2456,8 @@ export function initThreeJS(mountElement) {
           blink.style.display = 'none';
           blink.style.opacity = '0';
         }
-        if (!window.windowCutsceneShown) {
-          window.windowCutsceneShown = true;
-          document.getElementById('cutscene-window').classList.add('active');
-          cutsceneWindowTriggered = true;
-          if (video2 && video2.paused) {
-            video2.play().catch(() => { });
-          }
+        if (video2 && video2.paused) {
+          video2.play().catch(() => { });
         }
         isIntroPlaying = false;
         controls.enabled = true;
