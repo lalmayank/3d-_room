@@ -1,7 +1,7 @@
 Write-Host "Starting gltfpack compression on all 3D models..." -ForegroundColor Cyan
 
 $gltfpack = ".\bin\gltfpack.exe"
-$backupDir = "public\models_backup"
+$backupDir = "source_assets\models"
 $publicDir = "public"
 
 # 1. Standard models

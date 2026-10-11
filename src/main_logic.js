@@ -103,7 +103,12 @@ export function initThreeJS(mountElement) {
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
   camera.position.set(45, -12, 40);
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  // Low-power devices (phones/tablets): cheaper rendering and smaller video files
+  const isLowPower = window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 900;
+  const shadowMapSize = isLowPower ? 1024 : 2048;
+
+  const renderer = new THREE.WebGLRenderer({ antialias: !isLowPower, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isLowPower ? 1.5 : 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -141,8 +146,8 @@ export function initThreeJS(mountElement) {
   sun1.position.set(45, 10, -60);
   sun1.target.position.set(45, -5, 20);
   sun1.castShadow = true;
-  sun1.shadow.mapSize.width = 2048;
-  sun1.shadow.mapSize.height = 2048;
+  sun1.shadow.mapSize.width = shadowMapSize;
+  sun1.shadow.mapSize.height = shadowMapSize;
   sun1.shadow.camera.near = 0.5;
   sun1.shadow.camera.far = 150;
   sun1.shadow.camera.left = -50;
@@ -157,8 +162,8 @@ export function initThreeJS(mountElement) {
   sun2.position.set(-15, 10, -60);
   sun2.target.position.set(-15, -5, 20);
   sun2.castShadow = true;
-  sun2.shadow.mapSize.width = 2048;
-  sun2.shadow.mapSize.height = 2048;
+  sun2.shadow.mapSize.width = shadowMapSize;
+  sun2.shadow.mapSize.height = shadowMapSize;
   sun2.shadow.camera.near = 0.5;
   sun2.shadow.camera.far = 150;
   sun2.shadow.camera.left = -50;
@@ -495,7 +500,7 @@ export function initThreeJS(mountElement) {
   scene.add(councilRug);
 
   const textureLoader = new THREE.TextureLoader();
-  textureLoader.load('tabletop.jpg', function (texture) {
+  textureLoader.load('tabletop.webp', function (texture) {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.minFilter = THREE.LinearMipmapLinearFilter;
     texture.magFilter = THREE.LinearFilter;
@@ -525,7 +530,7 @@ export function initThreeJS(mountElement) {
 
   const boardTextureLoader = new THREE.TextureLoader();
 
-  boardTextureLoader.load('board.jpeg', function (texture) {
+  boardTextureLoader.load('board.webp', function (texture) {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.minFilter = THREE.LinearMipmapLinearFilter;
     texture.magFilter = THREE.LinearFilter;
@@ -555,7 +560,7 @@ export function initThreeJS(mountElement) {
 
   // 2. West Wall Board (Behind table) - Centered ACM Chapter Board
   const acmImage = new Image();
-  acmImage.src = 'acm_logo.jpeg';
+  acmImage.src = 'acm_logo.webp';
   acmImage.onload = function () {
     const canvas = document.createElement('canvas');
     canvas.width = 2048;
@@ -776,6 +781,7 @@ export function initThreeJS(mountElement) {
     video1.defaultMuted = true;
     video1.playsInline = true;
     video1.playbackRate = 1.8;
+    video1.defaultPlaybackRate = 1.8; // assigning src later resets playbackRate to this
   }
 
   const tex1 = new THREE.VideoTexture(video1);
@@ -858,7 +864,18 @@ export function initThreeJS(mountElement) {
   const skyMat = new THREE.MeshBasicMaterial({ map: tex1 });
   const skyMatRoom = new THREE.MeshBasicMaterial({ map: tex2 });
 
+  // Video files are attached only once the models have finished loading, so the
+  // video downloads never compete with the loading screen.
+  let videoSourcesAttached = false;
+  const attachVideoSources = () => {
+    if (videoSourcesAttached) return;
+    videoSourcesAttached = true;
+    if (video1) video1.src = '/videos/window-texture.mp4';
+    if (video2) video2.src = isLowPower ? '/videos/window-cutscene-720.mp4' : '/videos/window-cutscene-1080.mp4';
+  };
+
   playVideos = () => {
+    attachVideoSources();
     if (video1 && video1.paused) video1.play().catch(() => { });
     if (video2 && video2.paused) video2.play().catch(() => { });
   };
@@ -2663,6 +2680,7 @@ export function initThreeJS(mountElement) {
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isLowPower ? 1.5 : 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 

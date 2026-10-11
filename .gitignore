@@ -26,3 +26,6 @@ dist-ssr
 # Assets
 *.mp4
 archive/
+*:Zone.Identifier
+source_assets/
+!public/videos/*.mp4

@@ -132,7 +132,7 @@
     }
 
     #cutscene-table {
-      background-image: url('/tabletop.jpg');
+      background-image: url('/tabletop.webp');
       background-size: contain;
       background-position: center;
       background-repeat: no-repeat;

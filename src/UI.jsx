@@ -17,7 +17,7 @@ export default function UI() {
         <div id="loading" style={{ display: 'none' }}></div>
       </div>
       <div id="blink-overlay" className="flex items-center justify-center flex-col overflow-hidden">
-        <img id="intro-logo" src="/ACM_logo.png" alt="ACM Logo" className="w-[400px] max-w-[80vw] object-contain will-change-transform" />
+        <img id="intro-logo" src="/ACM_logo.webp" alt="ACM Logo" className="w-[400px] max-w-[80vw] object-contain will-change-transform" />
       </div>
       <button
         id="skip-intro-btn"
@@ -44,8 +44,8 @@ export default function UI() {
       </div>
       <div id="cutscene-table" className="cutscene-screen" title="Click to close table blueprint">
         <div id="newspaper-container">
-          <img id="newspaper-folded" src="/newspaper.png" alt="News Article" />
-          <img id="newspaper-full" src="/Full_newspaper.jpeg" alt="Full News Article" />
+          <img id="newspaper-folded" src="/newspaper.webp" alt="News Article" />
+          <img id="newspaper-full" src="/Full_newspaper.webp" alt="Full News Article" />
         </div>
       </div>
       <div id="cutscene-board" className="cutscene-screen">
@@ -60,9 +60,7 @@ export default function UI() {
       <div id="cutscene-window" className="cutscene-screen" title="Click to step back from window">
         <video
           id="windowVideoRoom"
-          src="/videos/12254166_3840_2160_60fps.mp4"
-          preload="auto"
-          autoPlay
+          preload="none"
           loop
           muted
           playsInline
@@ -74,7 +72,7 @@ export default function UI() {
           }}
         />
         <img
-          src="/ACM_logo.png"
+          src="/ACM_logo.webp"
           alt="ACM Logo"
           style={{
             position: 'absolute',
@@ -100,8 +98,7 @@ export default function UI() {
 
       <video
         id="windowVideo"
-        src="/videos/8623-212638552.mp4"
-        preload="auto"
+        preload="none"
         loop
         muted
         playsInline
